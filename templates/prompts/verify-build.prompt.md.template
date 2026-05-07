@@ -1,0 +1,87 @@
+---
+description: Run xcodebuild and report success or the failure tail. Used by orchestrator/specialists as the build-gate equivalent before declaring `status: completed`.
+---
+
+# /verify-build
+
+> **Invocation.** Type `/verify-build` in Copilot Chat. Useful as an explicit verification step at the end of any code-changing task, especially when the orchestrator needs evidence the build is green before accepting a specialist's `return:` block.
+
+## When to invoke
+
+- Specialist claims `status: completed` for a code change but `tests_run` is empty (orchestrator runs this as the catch-up gate)
+- After a non-trivial refactor, before opening a PR
+- Sanity check after merging in `<DEFAULT_BASE_BRANCH>` to confirm your branch still builds
+
+## When NOT to invoke
+
+- Pure docs change (no `.swift` / `.m` / `.h` / `.plist` / `.xcconfig` modified) — skip
+- You just ran `<BUILD_COMMAND>` ≤ 60 seconds ago and nothing's changed since
+- You're about to run `/commit-push-pr` (it has its own build gate)
+
+## Workflow
+
+### 1. Detect what to build
+
+```bash
+# What workspace + scheme?
+ls *.xcworkspace 2>/dev/null
+xcodebuild -workspace <XCODE_WORKSPACE> -list 2>/dev/null | head -20
+```
+
+If the user's project has multiple schemes, ask which one (default: `<XCODE_SCHEME>`).
+
+### 2. Run the build
+
+```bash
+<BUILD_COMMAND>
+```
+
+(For test verification, replace with `<TEST_COMMAND>`.)
+
+### 3. Capture result
+
+If exit 0 → report `OK` + duration
+
+If non-zero → capture the tail (~6 KB) of output. Look for:
+- `error:` lines
+- `xcodebuild: error:` lines
+- Compiler diagnostics (`Sources/Foo.swift:42:1: error: ...`)
+
+### 4. Report
+
+**On success:**
+```
+✓ Build OK — <BUILD_COMMAND>
+  Workspace: <XCODE_WORKSPACE>
+  Scheme:    <XCODE_SCHEME>
+  Duration:  <DURATION>
+```
+
+**On failure:**
+```
+✗ Build FAILED — <BUILD_COMMAND>
+
+Error tail (last ~6 KB):
+
+<paste>
+
+Files implicated (best guess from error lines):
+- <file:line>
+- <file:line>
+```
+
+If failure is in a file outside the current branch's diff (i.e. pre-existing breakage), note that — surface to user, don't blame their changes.
+
+## Hard rules
+
+- **NEVER** run `xcodebuild archive` from this prompt — too slow, requires signing material
+- **NEVER** modify any file as part of "fixing" the build — this prompt is verification only; if it fails, report and let the user (or orchestrator) decide what to do
+- **NEVER** run with `-quiet` flag in CI — we need the failure detail; for local dev, `--silent` is fine
+
+## Definition of Done
+
+1. Build command run
+2. Exit code captured
+3. On failure: tail captured + reported (≤ 6 KB)
+4. On success: duration reported
+5. Suggested next step (commit / fix specific error / re-run after `<other-action>`)

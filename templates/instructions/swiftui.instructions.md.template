@@ -1,0 +1,76 @@
+---
+applyTo: "Sources/Views/**/*.swift,Sources/**/*View.swift,*.xib,*.storyboard"
+---
+
+# SwiftUI / UIKit View Instructions
+
+> **What this is.** Auto-loaded by GitHub Copilot when editing any file matching `applyTo:` above.
+>
+> **Universal evidence rule.** Every claim about a View must cite path:line, an Apple HIG section, or a screenshot/snapshot test result. Don't claim "this view is accessible" without showing the relevant labels and traits.
+>
+> **iOS deployment target:** This project supports iOS <IOS_DEPLOYMENT_TARGET>+. Do not use SwiftData (iOS 17+), `@Observable` macro (iOS 17+), or `@Bindable` (iOS 17+) without `@available` guards.
+
+## Hard rules
+
+### 1. SwiftUI `@State` must be `private`
+
+**Why:** `@State` is owned by the view. Non-private breaks SwiftUI's identity invariants and causes silent re-render glitches.
+
+**How to apply:** All `@State` declarations are `private var`. Share state via `@Binding` (downward) or `@StateObject` + `@ObservedObject` (upward).
+
+### 2. Use `@StateObject` for view-owned reference state, `@ObservedObject` only for state passed in
+
+**Why:** `@StateObject` gives the view ownership lifecycle (init once, persist across re-renders). `@ObservedObject` doesn't own — using it on a top-level view causes the object to recreate on every re-render.
+
+**How to apply:** If the view creates the model (`StateObject(wrappedValue: MyModel())`), use `@StateObject`. If the model is passed in via init, use `@ObservedObject` (or better, inject via `.environmentObject` for shared state).
+
+### 3. Don't capture `self` strongly in `Task { }` inside `@MainActor` views
+
+**Why:** A strong-captured `self` in a long-running Task creates a retain cycle with the view's `@StateObject`. The view never deallocates.
+
+**How to apply:** Use `[weak self]` or extract the work into a free function. If view-scoped, use `.task { }` modifier (auto-cancels on view-disappear).
+
+### 4. Hit targets ≥ 44 points (Apple HIG)
+
+**Why:** Sub-44pt tap targets fail App Store accessibility review and frustrate users.
+
+**How to apply:** `.frame(minWidth: 44, minHeight: 44)` on Buttons / interactive views. For images-as-buttons, wrap in `.contentShape(Rectangle())` to expand the hit area.
+
+### 5. Accessibility labels are required for non-text content
+
+**Why:** VoiceOver reads only the `accessibilityLabel`. Image-only buttons / icons fail accessibility review without explicit labels.
+
+**How to apply:** Every `Image` / `Button` containing non-text content has `.accessibilityLabel(...)`. For decorative-only images, use `.accessibilityHidden(true)`.
+
+## What NOT to do
+
+- Don't use `UIWebView` — deprecated since iOS 12; App Store rejection risk. Use `WKWebView`.
+- Don't use `UIAlertView` / `UIActionSheet` — deprecated. Use `UIAlertController`.
+- Don't mix `setNeedsLayout` (UIKit) with SwiftUI layout passes — they don't share state.
+- Don't subclass `UIView` for visual effects when `CALayer` masks would do (perf cost).
+- Don't force-unwrap optionals in any public API (`func foo() -> User { users.first! }` crashes when empty).
+
+## Cross-links
+
+- `docs/ai-context/swiftui-patterns.md` — orientation map for view architecture
+- `.github/instructions/concurrency.instructions.md` — `Task` / `@MainActor` rules
+- `.github/instructions/info-plist.instructions.md` — required usage descriptions for capabilities the view triggers
+
+---
+
+## Notes for the instruction author
+
+(Delete this section before committing.)
+
+A good iOS instruction file:
+- Has an `applyTo:` glob that matches actual file paths in your project (verify with `find . -path ...`)
+- Each rule has a concrete "Why" (past production incident or hard invariant) and "How to apply"
+- ≤ 150 lines / ~3,000 chars (Copilot Code Review reads only the first ~4,000 chars)
+- Front-loads the most-violated rules
+- Cites at most 3 cross-links
+
+A bad iOS instruction file:
+- Aspirational rules ("we should always use SwiftUI") with no enforcement mechanism
+- Style preferences (lint config does this)
+- Contradicts another instruction file's `applyTo:` glob
+- > 3,000 chars (split into separate files)

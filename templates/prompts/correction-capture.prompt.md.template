@@ -1,0 +1,99 @@
+---
+description: After the user issues a correction, decide whether the lesson should harden into a `.github/instructions/<file>.instructions.md` patch — and if so, draft it.
+---
+
+# /correction-capture
+
+> **Invocation.** Type `/correction-capture` immediately after the user issues a correction.
+>
+> **Why this exists.** Copilot has no Stop event, so this discipline can't be auto-triggered. The cost of forgetting to invoke this is the user issuing the same correction again next session. Encode the invocation step into your orchestrator agent's incoming-feedback rules so it's not entirely user-driven.
+
+## When to invoke
+
+- User just corrected a recurring iOS pattern (e.g. *"you used UIWebView again — use WKWebView"*)
+- User said "I told you", "you forgot", "stop doing X", "instead of X use Y", "again", "you keep doing this", or similar
+- Code review surfaced a pattern that wasn't caught by existing instruction files
+
+## When NOT to invoke
+
+- One-off context-specific request ("for this file, use Y" — not a recurring rule)
+- Typo or wording correction
+- The "rule" already exists — instead, run `/inventory` to find the existing rule and ask why it didn't apply
+
+## Inputs
+
+- `${input:correction:What did the user just correct? Quote their exact words.}`
+- `${input:violated_pattern:What pattern did the assistant violate? (e.g. "used UIWebView in a new view")}`
+- `${input:scope:Which paths/file types does this rule apply to? (used to set the applyTo: glob)}`
+
+## Workflow
+
+### 1. Decide if recurring
+
+- First time? → Less urgent; note. If repeats, escalate.
+- Second+ time? → Definitely a rule. Proceed to Step 2.
+- One-off file/context? → Acknowledge, stop.
+
+If unsure, prefer to draft. Adding an unnecessary instruction is cheaper than skipping a needed one.
+
+### 2. Find the right instruction file
+
+Search `.github/instructions/` for an existing file whose `applyTo:` glob matches the scope:
+
+- **Existing matching file** → patch in place. Add a new "Hard rule" or "What NOT to do" entry.
+- **No matching file** → propose a new file. Filename = domain name (e.g. `ui-deprecations.instructions.md`, `concurrency-edge-cases.instructions.md`). Set `applyTo:` to broadest glob that captures the pattern.
+- **File matches but `applyTo:` is wrong** → propose updating the glob, citing the path that wasn't matched.
+
+### 3. Draft the patch
+
+Hard rule:
+
+```markdown
+### <SHORT_IMPERATIVE_TITLE>
+
+**Why:** <ONE_SENTENCE_REASON — usually the correction the user just made, or the past incident the rule prevents>
+
+**How to apply:** <2-4 SENTENCES — what to do instead, what helper to use, what to check>
+```
+
+What NOT to do:
+
+```markdown
+- Don't <TEMPTING_WRONG_THING> — <ONE_SENTENCE_REASON>. Use <CORRECT_THING> instead.
+```
+
+Pick the format matching file's existing style.
+
+### 4. Show the proposed patch
+
+```
+**Proposed patch — `.github/instructions/<file>.instructions.md`**
+
+Section: `<HEADING>` (Hard rules / What NOT to do)
+
+<PATCH_TEXT>
+
+Apply? (yes / edit / skip)
+```
+
+Wait for user approval. **Do NOT silently apply** — instruction files are checked into git and shipped with the project.
+
+### 5. Apply or skip
+
+- **yes** → write to instruction file. Verify file still parses (frontmatter intact, ≤ 150 lines / ~3,000 chars). Show diff.
+- **edit** → take user's revised version, apply.
+- **skip** → acknowledge, stop. Note in chat that user declined and ask whether to add to a "considered but not codified" list.
+
+## Definition of Done
+
+1. **Decision logged**: codified / deferred / rejected (one line at end of chat)
+2. **If codified**: instruction-file diff shown, file written, user shown result
+3. **No assistant memory claims**: assistant did NOT say "I'll remember", "I'll be careful", "noted" — those phrases are forbidden output
+4. **Instruction files that applied** to the violation site (so user can see whether existing rule should have caught it)
+
+## Hard NOs
+
+- **NEVER** silently apply an instruction-file patch without explicit user `yes`
+- **NEVER** patch a file that's > 3,000 chars without first showing line count and asking whether to split
+- **NEVER** overwrite or rewrite an existing instruction without preserving its history (additions only, unless user explicitly accepts a rewrite)
+- **NEVER** use the words "I'll remember" / "I'll keep that in mind" / "noted" — replace with the patch or with explicit "this isn't a recurring rule, declining to codify"

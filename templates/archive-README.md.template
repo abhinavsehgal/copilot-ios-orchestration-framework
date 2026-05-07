@@ -1,0 +1,52 @@
+# Frozen archive — `docs/_archive/`
+
+> **What this is.** Frozen historical documentation. Sprint reports, post-mortems, App Store rejection logs, deprecated migration plans, snapshots that are no longer authoritative.
+
+## Rules
+
+1. **Append-only.** Once a doc lands here, it stays. Never edit, never delete (you might need it for an audit / retrospective).
+2. **Per-month directories.** Use `YYYY-MM/<doc>.md` to keep things sorted by when they became frozen (not when originally written).
+3. **Never linked from active docs.** Active orientation maps (`docs/ai-context/<topic>.md`), canonical references (`docs/<UPPERCASE>.md`), and `.github/instructions/` files MUST NOT reference anything in `_archive/`. Cross-linking would cause drift.
+4. **Never read by Copilot agents.** If you find yourself wanting to feed an archive doc to an agent for context, the doc shouldn't be in the archive — promote it to a tier-1 or tier-2 doc first.
+
+## When to move a doc here
+
+A doc moves to archive when:
+- The decision it documents has been superseded
+- The migration / refactor / process it describes is complete
+- The post-mortem's action items have been addressed
+- The architecture it describes is no longer current
+- It's a sprint summary / retrospective from > 1 month ago
+
+A doc does NOT move to archive when:
+- Anyone might still reference it for current decisions (move that decision-relevant content into a tier-2 canonical doc first, THEN archive the historical version)
+- It's the only place a particular invariant is documented (extract the invariant into `.github/instructions/<NAME>.instructions.md` first, THEN archive)
+
+## Directory structure
+
+```
+docs/_archive/
+├── README.md              ← this file
+├── 2026-04/
+│   ├── coredata-v3-to-v4-migration-plan.md
+│   └── visionos-companion-deprecation.md
+├── 2026-01/
+│   └── ios-15-deprecation-tracker.md
+└── 2025-09/
+    └── post-mortem-app-store-rejection-1.0.4.md
+```
+
+## Audit trail
+
+When moving a doc here, add a one-line note at the top of the doc:
+
+```markdown
+> **ARCHIVED <YYYY-MM-DD>** — superseded by `docs/<replacement>.md` (or "issue resolved", "migration complete", etc.)
+```
+
+This way anyone who wanders in knows immediately why the doc is here and where the current authority lives.
+
+## Cross-links
+
+- `docs/ai-context/INDEX.md` — active routing (does NOT link here)
+- `prompts/REFINEMENT-PROMPT.md` (in the framework repo) — quarterly audit that proposes archive moves

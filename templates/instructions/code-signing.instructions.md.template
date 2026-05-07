@@ -1,0 +1,65 @@
+---
+applyTo: "fastlane/**,*.xcconfig,**/*.entitlements,Gymfile,Matchfile,Appfile"
+---
+
+# Code Signing & Release Instructions
+
+> **Universal evidence rule.** Every claim cites file:line, certificate thumbprint, provisioning profile UUID, or Fastlane lane name.
+
+## Hard rules
+
+### 1. NEVER commit signing material
+
+**Why:** Once committed, `.cer` / `.p12` / `.mobileprovision` / `*.keychain-db` files are in git history forever. Removing them from working tree doesn't remove from history. Must rotate every signing certificate.
+
+**How to apply:** `.gitignore` includes:
+```
+*.cer
+*.p12
+*.mobileprovision
+Profiles/*
+keychain-*
+*.keychain-db
+fastlane/.match_keychain
+fastlane/report.xml
+```
+
+The `/commit-push-pr` slash prompt explicitly refuses to stage paths matching these patterns. If discovered after the fact: rotate certs (treat as compromised), use `git-filter-repo` / BFG to scrub history, force-push (coordinate with team).
+
+### 2. Use Match (or equivalent) for team signing
+
+**Why:** Manual signing distribution = lost certs, expired profiles, "works on my machine" CI failures.
+
+**How to apply:** Match (or fastlane-equivalent) stores certs in a private encrypted git repo. Each developer + CI runs `match` to fetch; never has long-term cert state on disk.
+
+### 3. Provisioning profile rotation runbook
+
+**Why:** Profiles expire. Without a runbook, expiry happens the day before a release.
+
+**How to apply:** `docs/RELEASE_PROCESS.md` documents: (a) check expiry dates 30 days out, (b) rotate via Match command, (c) verify in Xcode after rotation. Calendar reminder set per profile.
+
+### 4. Build number monotonic and unique
+
+**Why:** App Store Connect rejects builds with non-monotonic build numbers. Hard to debug if you mix manual + automated bumps.
+
+**How to apply:** Build number is bumped via `agvtool new-version -all <number>` or Fastlane `increment_build_number_in_xcodeproj`. The bump is its own commit on its own branch (don't mix with feature changes).
+
+### 5. Release lane is gated
+
+**Why:** Accidentally running `fastlane release` from a dev's machine = accidental App Store submission.
+
+**How to apply:** `release` lane checks: (a) current branch is `main`, (b) tag matches version, (c) GitHub Actions is the caller (`ENV['GITHUB_ACTIONS']`), or human-confirms via prompt. If any check fails, abort.
+
+## What NOT to do
+
+- Don't commit Fastlane `.env*` files with API keys
+- Don't share signing certs by email / Slack — use Match
+- Don't set Xcode "Automatic Signing" for the production scheme — too easy to accidentally re-sign with a dev cert
+- Don't push to `main` without an open PR + CI green
+- Don't archive locally and upload from a developer's machine — CI is the source of truth
+
+## Cross-links
+
+- `docs/RELEASE_PROCESS.md` — full runbook
+- `docs/ai-context/release-process.md` — orientation map
+- `.github/agents/<PROJECT_SLUG>-ios-release.md` — release specialist that owns this domain

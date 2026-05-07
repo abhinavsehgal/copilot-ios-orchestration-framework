@@ -1,0 +1,20 @@
+# Adopter-side scratch (not framework artifacts)
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# If anyone clones this and tries to build a sample iOS app inside (you shouldn't, but defense in depth)
+build/
+DerivedData/
+*.xcuserstate
+xcuserdata/
+*.xcworkspace/xcuserdata/
+
+# Python venv if anyone uses one for local doc tooling
+.venv/
+__pycache__/
+*.pyc
+
+# Node if anyone uses prettier / mdx tooling
+node_modules/

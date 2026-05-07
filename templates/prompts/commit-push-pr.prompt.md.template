@@ -1,0 +1,144 @@
+---
+description: Validate → commit → push → open/update PR against <DEFAULT_BASE_BRANCH>. Enforces iOS golden rules at the slash-prompt boundary so daily commits stay safe.
+---
+
+# /commit-push-pr
+
+> **Invocation.** Type `/commit-push-pr` in Copilot Chat on a feature branch.
+
+## When to invoke
+
+- Feature branch with uncommitted changes ready to ship
+- Default base branch is `<DEFAULT_BASE_BRANCH>` (NOT `main`)
+- A PR may already exist (workflow updates if so)
+
+## When NOT to invoke
+
+- On `main`, `master`, or `<DEFAULT_BASE_BRANCH>` itself — refuse, switch to feature branch
+- Mid-multi-file change that isn't done yet — finish first
+- Force-push pending — different workflow
+
+## Inputs
+
+- `${input:summary:Optional Conventional Commit summary override (leave empty to auto-generate)}`
+
+## Workflow — strict, sequential. STOP at any failure.
+
+### Step 1 — Pre-flight context
+
+- Current branch: `git branch --show-current`
+- Working tree: `git status --short`
+- Diff stat vs base: `git diff --stat <DEFAULT_BASE_BRANCH>...HEAD`
+- iOS build-relevant files dirty: `git status --porcelain | awk '{ sub(/^... /, ""); print }' | grep -E '\.(swift|h|m|mm)$|\.plist$|\.entitlements$|\.xcconfig$|\.xcdatamodeld|Podfile.lock$|Package.resolved$'`
+- **Signing material check** (this is the security gate): `git status --porcelain | awk '{ sub(/^... /, ""); print }' | grep -E '\.(cer|p12|mobileprovision|keychain-db)$|^Profiles/|secret|credentials|private-key'`
+- Existing PR: `gh pr list --base <DEFAULT_BASE_BRANCH> --head $(git branch --show-current) --json url,title,state`
+- Recent commits on this branch: `git log --oneline <DEFAULT_BASE_BRANCH>..HEAD`
+- Last 5 commits on `<DEFAULT_BASE_BRANCH>` (style reference): `git log --oneline <DEFAULT_BASE_BRANCH> | head -5`
+
+### Step 2 — Branch safety
+
+- If `main` / `master` / `<DEFAULT_BASE_BRANCH>` → **REFUSE**: *"Cannot commit-push-PR from `<branch>`. Switch to a feature branch off `<DEFAULT_BASE_BRANCH>` first."*
+- If `release/*` or `hotfix/*` → **CONFIRM** with user before proceeding.
+- Otherwise → proceed.
+
+### Step 3 — Signing material gate (HARD STOP)
+
+- If Step 1's signing-material check found ANY file → **STOP IMMEDIATELY**. Do NOT proceed. Tell user: *"Signing material in working tree: [list]. These must NEVER be committed. Run `git restore <files>` or move them outside the repo before retrying."*
+
+### Step 4 — Build gate (iOS)
+
+- If no build-relevant files dirty → skip the build, jump to Step 5
+- Otherwise → run `<BUILD_COMMAND>`
+- If build fails → **STOP**. Report the error tail. Do not proceed to commit.
+
+### Step 5 — Diff review + instruction-file alignment check
+
+- Show user the diff stat from Step 1
+- For each changed file, identify which `.github/instructions/*.instructions.md` `applyTo:` glob matches
+- Confirm Copilot was respecting those instructions during the edits
+- If suspected violation → **STOP**, surface to user, ask whether to fix or proceed
+
+### Step 6 — Stage selectively
+
+- **NEVER** `git add -A` or `git add .` blindly
+- Stage specific paths after user confirmation
+- Refuse to stage:
+  - Anything matching the signing-material patterns from Step 1's check
+  - `*.env*` files
+  - Anything in `Pods/` or `Carthage/Build/`
+  - Anything in `*.xcodeproj/xcuserdata/`
+  - Anything in `*.xcworkspace/xcuserdata/`
+  - DerivedData / build folder
+
+### Step 7 — Conventional Commit message
+
+Use the project style from Step 1's `<DEFAULT_BASE_BRANCH>` recent commits. Type prefixes:
+
+- `feat(<scope>):` — new functionality
+- `fix(<scope>):` — bug fix
+- `chore(<scope>):` — tooling, deps, config
+- `docs(<scope>):` — docs only
+- `refactor(<scope>):` — restructure without behavior change
+- `test(<scope>):` — tests only
+- `style(<scope>):` — formatting only
+
+Body (1-3 sentences): explain **why**, not what.
+
+Trailer: `<PROJECT_TRAILER>`
+
+If `${input:summary}` set, use it. Otherwise generate one.
+
+Use HEREDOC:
+
+```bash
+git commit -m "$(cat <<'EOF'
+feat(scope): one-line summary under 70 chars
+
+Why this change matters in 1-3 sentences.
+
+<PROJECT_TRAILER>
+EOF
+)"
+```
+
+### Step 8 — Push
+
+- `git push -u origin "$(git branch --show-current)"`
+- If push rejected → **STOP**. Do NOT use `--force`. Report.
+
+### Step 9 — Open or update PR
+
+- If no existing PR → create with `gh pr create --base <DEFAULT_BASE_BRANCH> --title "<commit summary>" --body "..."`
+- If existing PR → push updated it; just fetch and report
+
+### Step 10 — Final report
+
+```
+✓ Branch:        <name>
+✓ Commit:        <sha-short> <summary>
+✓ Build:         <BUILD_COMMAND> OK (or skipped: no build-relevant changes)
+✓ Pushed:        origin/<branch>
+✓ PR:            <url>  [opened | updated]
+✓ Signing gate:  passed (no signing material staged)
+```
+
+## Hard NOs (iOS-specific golden rules at the prompt boundary)
+
+- **NEVER** push to `main` / `master` / `<DEFAULT_BASE_BRANCH>` directly
+- **NEVER** `--force` / `--force-with-lease` / `--no-verify` / `--no-gpg-sign`
+- **NEVER** amend an existing commit (always new commit)
+- **NEVER** stage `.cer`, `.p12`, `.mobileprovision`, `*.keychain-db`, anything in `Profiles/`, anything matching `secret`/`credentials`/`private-key`
+- **NEVER** stage `.env*`
+- **NEVER** stage `*.xcodeproj/xcuserdata/`, `*.xcworkspace/xcuserdata/`, `DerivedData/`, `Pods/`
+- **NEVER** open a PR against `main` from this prompt (only `<DEFAULT_BASE_BRANCH>`)
+- **NEVER** auto-merge a PR
+- **NEVER** skip Step 4 (build gate) when build-relevant files are dirty
+
+## Definition of Done
+
+1. Build outcome: OK or skipped
+2. Commit: SHA + Conventional Commit message + project trailer
+3. Push: branch on `origin/<branch>`, no force
+4. PR: opened or updated, URL printed
+5. Signing-material check: passed
+6. Instruction files that applied during edits: listed (so reviewers know which rules were active)

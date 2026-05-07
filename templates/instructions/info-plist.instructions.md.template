@@ -1,0 +1,76 @@
+---
+applyTo: "**/Info.plist,**/*.entitlements,**/PrivacyInfo.xcprivacy"
+---
+
+# Info.plist + Entitlements + Privacy Manifest Instructions
+
+> **Universal evidence rule.** Every claim cites Info.plist:key, entitlement file path, App Store Review Guidelines § number, or third-party SDK PrivacyInfo.xcprivacy reference.
+>
+> **iOS deployment target:** iOS <IOS_DEPLOYMENT_TARGET>+. Privacy manifest requirements (iOS 17+) apply to apps shipping to App Store regardless of minimum deployment.
+
+## Hard rules
+
+### 1. Every capability triggers a usage description
+
+**Why:** Adding camera / photos / location / etc. without `NSXxxUsageDescription` crashes app at runtime AND fails App Store Review.
+
+**How to apply:** Use this lookup table. If you add a capability via Xcode "Signing & Capabilities" or by calling a privacy-protected API, add the corresponding key with user-facing rationale text.
+
+| Capability | Required Info.plist key |
+|---|---|
+| Camera (AVCapture) | `NSCameraUsageDescription` |
+| Photo library (read) | `NSPhotoLibraryUsageDescription` |
+| Photo library (write) | `NSPhotoLibraryAddUsageDescription` |
+| Location when in use | `NSLocationWhenInUseUsageDescription` |
+| Location always | `NSLocationAlwaysAndWhenInUseUsageDescription` + `NSLocationWhenInUseUsageDescription` |
+| Contacts | `NSContactsUsageDescription` |
+| Microphone | `NSMicrophoneUsageDescription` |
+| FaceID / TouchID | `NSFaceIDUsageDescription` |
+| Tracking (IDFA) | `NSUserTrackingUsageDescription` |
+| Calendar (iOS 17+) | `NSCalendarsFullAccessUsageDescription` |
+| Reminders (iOS 17+) | `NSRemindersFullAccessUsageDescription` |
+| Health | `NSHealthShareUsageDescription` + `NSHealthUpdateUsageDescription` |
+| Bluetooth | `NSBluetoothAlwaysUsageDescription` |
+| Motion / fitness | `NSMotionUsageDescription` |
+| Speech recognition | `NSSpeechRecognitionUsageDescription` |
+| HomeKit | `NSHomeKitUsageDescription` |
+| Local network | `NSLocalNetworkUsageDescription` |
+| NFC | `NFCReaderUsageDescription` |
+| Siri | `NSSiriUsageDescription` |
+
+### 2. ATT prompt before any tracking framework loads
+
+**Why:** App Store rejects apps that initialize ad / analytics SDKs that use IDFA before requesting tracking authorization.
+
+**How to apply:** For any framework using IDFA: (1) Add `NSUserTrackingUsageDescription` to Info.plist with concrete rationale, (2) Call `ATTrackingManager.requestTrackingAuthorization` BEFORE the framework's init, (3) Init the framework only on `.authorized` state, (4) Document this sequence in PR description for `<PROJECT_SLUG>-ios-privacy` to verify.
+
+### 3. Required Reasons API declarations (iOS 17+)
+
+**Why:** App Store rejects apps using "Required Reasons APIs" (`UserDefaults`, file timestamp, system boot time, disk space, active keyboards) without declarations in `PrivacyInfo.xcprivacy`.
+
+**How to apply:** When adding a new API call from the Required Reasons list (full list: developer.apple.com/documentation/bundleresources/privacy_manifest_files/describing_use_of_required_reason_api), update `PrivacyInfo.xcprivacy` with the appropriate reason code (e.g. `CA92.1` for `UserDefaults`).
+
+### 4. Third-party SDK privacy manifests required
+
+**Why:** Adding a Pod / SPM dependency that uses Required Reasons APIs without shipping its own `PrivacyInfo.xcprivacy` → App Store rejection on submission.
+
+**How to apply:** Before adding any new dependency, verify its `PrivacyInfo.xcprivacy` exists (check the Pod's repo / SPM source). If absent, surface to `<PROJECT_SLUG>-ios-privacy` for risk assessment.
+
+### 5. `BGTaskSchedulerPermittedIdentifiers` for every background task
+
+**Why:** Calling `BGTaskScheduler.shared.register(forTaskWithIdentifier: ...)` without the identifier in `Info.plist`'s `BGTaskSchedulerPermittedIdentifiers` array → silently never schedules.
+
+**How to apply:** Every new BG task ID added to code must also be added to Info.plist. Verify in `<PROJECT_SLUG>-ios-bg`'s PR description.
+
+## What NOT to do
+
+- Don't ship usage descriptions like "We need this" — be specific and user-facing (App Reviewers reject vague descriptions)
+- Don't add entitlements you don't actually use (App Review may require justification; "I might use it later" isn't accepted)
+- Don't put plain-text secrets in Info.plist (it's bundled with the app; anyone can extract)
+- Don't disable App Transport Security globally — exception domains only with documented reason
+
+## Cross-links
+
+- `docs/ai-context/info-plist-policy.md` — orientation map
+- `.github/agents/<PROJECT_SLUG>-ios-privacy.md` — REVIEW-ONLY auditor
+- App Store Review Guidelines § 5.1 (Privacy)

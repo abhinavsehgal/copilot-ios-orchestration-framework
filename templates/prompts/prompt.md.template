@@ -1,0 +1,75 @@
+---
+description: <ONE_SENTENCE_DESCRIPTION_OF_WHEN_TO_USE_THIS — appears in /command picker>
+---
+
+# /<PROMPT_NAME>
+
+> **Invocation.** Type `/<PROMPT_NAME>` in Copilot Chat.
+
+## When to invoke
+
+- <BULLET_LIST_OF_TRIGGER_CONDITIONS>
+
+## When NOT to invoke
+
+- <BULLET_LIST_OF_ANTI_TRIGGERS>
+
+## Inputs
+
+- `${input:goal:What is the goal?}`
+- `${input:scope:What's in scope?}`
+- <OTHER_INPUTS_AS_NEEDED>
+
+## Workflow
+
+### 1. <Step name>
+
+<2-4 sentences>
+
+### 2. <Step name>
+
+<...>
+
+### 3. <Step name>
+
+<...>
+
+### 4. <Step name>
+
+<...>
+
+### 5. <Step name>
+
+<...>
+
+(Aim for 5-10 steps. More than 10 is a smell — split into sub-prompts.)
+
+## Definition of Done
+
+1. <ARTIFACT_1 — e.g. "Severity-ranked findings list">
+2. <ARTIFACT_2>
+3. <ARTIFACT_3>
+4. **Instruction files that applied** (the auto-loaded `.github/instructions/*.instructions.md` paths during this work)
+
+## Hard NOs
+
+- **NEVER** <DANGEROUS_ACTION_1>
+- **NEVER** <DANGEROUS_ACTION_2>
+
+---
+
+## Notes for the prompt author
+
+(Delete this section before committing.)
+
+A good iOS slash prompt:
+- Used at least once a day (otherwise upfront design cost doesn't pay back)
+- Has hard NOs matching project's golden rules
+- Names each step explicitly so user can interrupt cleanly
+- Never destructively modifies state without explicit per-call confirmation
+
+A bad iOS slash prompt:
+- Wraps a one-step workflow (just type the command directly)
+- Reads contextual state inside prompt body (slow — use Step 1 to gather first)
+- Auto-confirms destructive operations
+- Re-implements features Copilot already has (e.g. summarizing the diff — Copilot can do that natively)

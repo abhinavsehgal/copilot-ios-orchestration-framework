@@ -1,0 +1,53 @@
+---
+applyTo: "**/*.xcdatamodeld/**,Sources/Persistence/**/*.swift,Sources/**/Model+*.swift,Sources/**/*+CoreDataClass.swift,Sources/**/*+CoreDataProperties.swift"
+---
+
+# CoreData Instructions
+
+> **Universal evidence rule.** Every claim cites path:line, schema location (`*.xcdatamodeld/<version>/contents:Entity:Attribute`), or test output.
+>
+> **iOS deployment target:** iOS <IOS_DEPLOYMENT_TARGET>+. SwiftData (iOS 17+) is NOT used in this project (or: replace this line with your team's policy).
+
+## Hard rules
+
+### 1. `viewContext` is `@MainActor`-bound
+
+**Why:** Calling `viewContext.save()` or modifying `viewContext` objects from a background thread crashes (`unrecognized selector` to a thread-confined object) or silently corrupts the persistent store.
+
+**How to apply:** `viewContext` is touched only on the main thread. For non-UI work, use `container.performBackgroundTask { ctx in ... }` or `ctx.perform { }` to switch to the context's queue. Set `automaticallyMergesChangesFromParent = true` on `viewContext` for cross-context propagation.
+
+### 2. Pass `NSManagedObjectID` across context boundaries, not `NSManagedObject`
+
+**Why:** `NSManagedObject` instances are tied to their context's queue. Passing them to another context's queue causes intermittent crashes.
+
+**How to apply:** Hand off `objectID` (Sendable). Re-fetch via `try otherContext.existingObject(with: objectID)` on the receiving side.
+
+### 3. Schema version bumps require a mapping model
+
+**Why:** Editing a shipped schema in place silently diverges staging from production. Lightweight migration covers most cases (add attribute, rename via renaming identifier); heavy migration needs explicit mapping model.
+
+**How to apply:** Adding an attribute → bump model version, mark new version current, set lightweight migration on container. Renaming entity / attribute → mapping model with explicit policy. **NEVER** edit a shipped version's `.xcdatamodel/contents` directly.
+
+### 4. Test contexts use `inMemory: true`
+
+**Why:** Tests sharing a CoreData store have flaky behavior — test A leaves data, test B reads it, flake.
+
+**How to apply:** Each test instantiates a fresh `NSPersistentContainer` with `description.url = URL(fileURLWithPath: "/dev/null")` (or `inMemory` config). `setUp()` creates; `tearDown()` releases.
+
+### 5. `@FetchRequest` only inside SwiftUI views
+
+**Why:** `@FetchRequest` is property-wrapper-bound to view lifecycle. Outside SwiftUI it doesn't fire updates correctly.
+
+**How to apply:** For non-view fetches, use `viewContext.fetch(...)` (one-shot) or `NSFetchedResultsController` (live updates outside SwiftUI). For SwiftUI views, `@FetchRequest` is fine.
+
+## What NOT to do
+
+- Don't access `UIApplication.shared.delegate.persistentContainer` from a test (use injected fresh container)
+- Don't subclass `NSManagedObject` to add stored properties (use `@NSManaged` extensions per codegen pattern)
+- Don't `try?` on `context.save()` and ignore the error (CoreData errors usually indicate constraint violations or merge conflicts that must surface)
+- Don't run a heavy fetch on `viewContext` (blocks main thread; use background context + return objectIDs)
+
+## Cross-links
+
+- `docs/ai-context/coredata-schema.md` — schema versioning policy
+- `.github/instructions/concurrency.instructions.md` — `@MainActor` discipline (cross-cuts CoreData)

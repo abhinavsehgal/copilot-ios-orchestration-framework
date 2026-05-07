@@ -1,0 +1,163 @@
+# Orchestration Spoonfeeder — <PROJECT_NAME>
+
+> **Audience:** humans (engineers on the team). Copy-paste-friendly examples for actually using the framework day-to-day.
+
+---
+
+## Quick start: most common day-to-day tasks
+
+### "I need to fix one thing in one view"
+
+Just open the view file. Copilot Chat (with the file as active) auto-loads `.github/instructions/swiftui.instructions.md`. Ask in Chat: *"Update this view to use `@StateObject` instead of `@ObservedObject` for the model."*
+
+No agent invocation needed. Inline Chat or full Chat panel both work.
+
+### "I need to add a feature that touches data + UI + maybe network"
+
+This is orchestrator territory. In Chat:
+
+```
+@<PROJECT_SLUG>-orchestrator add a streak counter to the profile screen.
+The streak should increment on each app launch and persist across launches.
+```
+
+The orchestrator will:
+1. Restate what you asked
+2. Decompose into ordered handoffs (likely `ios-data` first, then `ios-ui`)
+3. Issue handoffs one at a time, validate each return
+4. Aggregate and report back
+
+You stay in the Chat thread; the orchestrator drives.
+
+### "I need to commit and push"
+
+```
+/commit-push-pr
+```
+
+The slash prompt will:
+- Verify branch is not `main` / `develop`
+- Run the build (if any iOS-build-relevant files are dirty)
+- Refuse to stage `.cer` / `.p12` / `.mobileprovision` / `.env*`
+- Generate a Conventional Commit message
+- Push and open a PR against `<DEFAULT_BASE_BRANCH>`
+
+If anything fails (build broken, signing material in working tree, etc.), it stops and tells you what to fix.
+
+### "I just got a Crashlytics top-issue alert"
+
+```
+@<PROJECT_SLUG>-ios-perf triage the top Crashlytics issue from the last 7 days
+```
+
+If you have the Sentry / Crashlytics MCP installed, the perf specialist will fetch real crash data, find the hotspot, and propose a fix. If you don't have the MCP, give it the crash ID + stack trace in the message.
+
+### "I corrected Copilot on something"
+
+After the correction, run:
+
+```
+/correction-capture
+```
+
+The prompt walks Copilot through deciding whether the lesson is recurring enough to harden into an instruction file, drafts the patch, and asks for your approval before applying.
+
+---
+
+## Agent + slash prompt cheat sheet
+
+| Want to … | Use |
+|---|---|
+| Fix one thing in one view | Inline Chat / Chat panel (no agent) |
+| Cross-domain feature | `@<PROJECT_SLUG>-orchestrator` |
+| SwiftUI / UIKit / accessibility | `@<PROJECT_SLUG>-ios-ui` |
+| CoreData / SwiftData / persistence | `@<PROJECT_SLUG>-ios-data` |
+| Networking / API / cert pinning | `@<PROJECT_SLUG>-ios-network` |
+| Tests | `@<PROJECT_SLUG>-ios-tests` |
+| Fastlane / release | `@<PROJECT_SLUG>-ios-release` |
+| Privacy / Info.plist audit | `@<PROJECT_SLUG>-ios-privacy` (REVIEW-ONLY) |
+| Performance / Crashlytics | `@<PROJECT_SLUG>-ios-perf` |
+| Background tasks / push | `@<PROJECT_SLUG>-ios-bg` |
+| Commit + push + PR | `/commit-push-pr` |
+| Codify a correction into a rule | `/correction-capture` |
+| Verify build | `/verify-build` |
+
+---
+
+## When orchestrator vs direct specialist?
+
+**Use orchestrator when:**
+- The task crosses 2+ specialists' scope
+- You're not sure which specialist owns it
+- You want the structured handoff schema enforced
+- The task is risky (privacy-touching, schema migration, signing)
+
+**Use specialist directly when:**
+- The task is clearly one specialist's scope
+- You're iterating quickly on a small change
+- You want minimum overhead
+
+Default to specialist for small tasks. Default to orchestrator for medium/large.
+
+---
+
+## Common patterns
+
+### Pattern: "Add a feature that needs an Info.plist key"
+
+1. `@<PROJECT_SLUG>-orchestrator <feature description>`
+2. Orchestrator routes: `ios-privacy` (REVIEW-ONLY) audits the Info.plist need first → `ios-ui` (or whoever owns the feature) implements with the key added → `ios-privacy` re-audits final state
+
+### Pattern: "Investigate a flaky test"
+
+1. `@<PROJECT_SLUG>-ios-tests look at <TestCase> — it's flaky in CI but passes locally`
+2. Tests specialist reads the test, identifies probable cause (often shared state, non-deterministic dates, simulator destination drift)
+3. Returns a fix proposal; you approve or request alternatives
+
+### Pattern: "Bump the build number for TestFlight"
+
+1. `@<PROJECT_SLUG>-ios-release bump build number for TestFlight beta release`
+2. Release specialist creates a version-bump branch, runs the bump, opens a PR with the version commit isolated from feature commits
+
+---
+
+## When to NOT use the framework
+
+- Trivial typo fix in a doc → just edit
+- Quick code-review comment → just write it
+- Sandbox / experimental scratch file → just write it; the framework isn't a tax on exploration
+
+The framework is for **production-shape work**. Day-to-day exploratory coding doesn't need orchestrator overhead.
+
+---
+
+## Troubleshooting
+
+### "The instruction file isn't auto-loading"
+
+- Check the file's `applyTo:` glob matches your actual file path: `find . -path '<glob>' | head -10`
+- If no matches, fix the glob
+- After editing the glob, the instruction file auto-loads on the NEXT Chat interaction (no restart needed)
+
+### "Copilot says 'I'll remember' instead of proposing a rule patch"
+
+- Run `/correction-capture` immediately. The prompt forces a real instruction-file patch and forbids "I'll remember" phrasing.
+
+### "Orchestrator skipped the handoff schema"
+
+- The orchestrator's instruction file (`.github/agents/<PROJECT_SLUG>-orchestrator.md`) requires it. If it's drifting, run `/correction-capture` to add a Hard rule to the orchestrator's file.
+
+### "Specialist gave a vague return"
+
+- The orchestrator should reject. If it didn't, that's a discipline gap in the orchestrator's instructions. Add a Hard rule via `/correction-capture`.
+
+---
+
+## Per-quarter maintenance
+
+Run `prompts/REFINEMENT-PROMPT.md` from the framework repo. It walks through:
+- Audit specialist usage (drop dead ones, refactor over-broad ones)
+- Audit instruction-file `applyTo:` (tighten globs, fix non-matching ones)
+- Audit `copilot-instructions.md` length (trim if past 200 lines)
+- Audit `docs/ai-context/` for tier-1 → tier-3 archive moves
+- Add new pitfalls from the last quarter's notes

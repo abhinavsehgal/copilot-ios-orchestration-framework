@@ -1,0 +1,53 @@
+---
+applyTo: "Sources/**/*.swift"
+---
+
+# Swift Concurrency Instructions
+
+> **Universal evidence rule.** Every claim cites path:line or test output.
+>
+> **iOS deployment target:** iOS <IOS_DEPLOYMENT_TARGET>+. Swift Concurrency available iOS 13+ via backport, fully native iOS 15+.
+
+## Hard rules
+
+### 1. `@MainActor` discipline for UI mutation
+
+**Why:** Mutating `@Published` / `@State` / UIView state from a background thread causes silent UI corruption or hard crashes.
+
+**How to apply:** Methods that mutate UI state are annotated `@MainActor`. Async returning to UI uses `await MainActor.run { }` or `Task { @MainActor in }`. Properties bound to UI are `@MainActor`-isolated.
+
+### 2. Don't capture `self` strongly in long-running `Task { }`
+
+**Why:** Retain cycles with `@StateObject`-owning views; views never deallocate; memory grows.
+
+**How to apply:** `[weak self]`, or extract to a free function with explicit parameters, or use `.task { }` view modifier (auto-cancels on view-disappear).
+
+### 3. Propagate `Task` cancellation through nested awaits
+
+**Why:** Without `try Task.checkCancellation()`, a cancelled Task continues nested work, wasting cycles.
+
+**How to apply:** At hot points in long-running async code, call `try Task.checkCancellation()`. For network calls, configure URLSession with task-aware cancellation (Foundation handles this if you use the `data(for:)` async API).
+
+### 4. Single-flight auth refresh
+
+**Why:** N concurrent 401s without single-flight cause N concurrent refresh requests. Server side-effects + token churn.
+
+**How to apply:** Wrap auth refresh in an actor (or a `@MainActor`-isolated singleton) with an "in-flight" flag. Concurrent callers `await` the same in-flight Task.
+
+### 5. No `DispatchQueue.main.sync` from a non-main thread
+
+**Why:** Deadlock if called from main thread; otherwise blocks the calling thread on main scheduler. Almost always wrong in 2026 (use Swift Concurrency).
+
+**How to apply:** Use `await MainActor.run { }` or annotate the calling function `@MainActor`.
+
+## What NOT to do
+
+- Don't mix `DispatchQueue` patterns with Swift Concurrency in the same code path — pick one.
+- Don't use `Task.detached` unless you specifically need to escape parent's actor context (rare).
+- Don't use `async let` for sequential dependencies (it implies parallelism; use sequential `await`).
+- Don't ignore `Task` warnings about non-Sendable captures — they predict real data races.
+
+## Cross-links
+
+- `.github/instructions/swiftui.instructions.md` — view-side concurrency
+- `.github/instructions/networking.instructions.md` — async networking patterns

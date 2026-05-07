@@ -1,0 +1,55 @@
+---
+applyTo: "Sources/Networking/**/*.swift,Sources/**/*Client.swift,Sources/**/Endpoint*.swift,Sources/**/API*.swift"
+---
+
+# Networking Instructions
+
+> **Universal evidence rule.** Every claim cites path:line, endpoint definition, cert thumbprint, or live network capture.
+>
+> **iOS deployment target:** iOS <IOS_DEPLOYMENT_TARGET>+. async-await URLSession APIs available iOS 15+.
+
+## Hard rules
+
+### 1. Cert pinning for any user-data-bearing endpoint
+
+**Why:** TLS alone trusts every CA in the device's trust store. A compromised intermediate CA = MITM. Cert pinning fails fast.
+
+**How to apply:** `URLSessionDelegate.urlSession(_:didReceive:completionHandler:)` validates the cert thumbprint against pinned set. (Or use a pinning library like TrustKit.) Pinned certs documented in `docs/PRIVACY_AND_DATA.md`.
+
+### 2. No auth tokens in URL query strings
+
+**Why:** Servers log query strings; reverse proxies log them; CDN access logs include them. Tokens in query strings leak.
+
+**How to apply:** Auth tokens go in `Authorization: Bearer ...` header. Refresh tokens in body of refresh request, never in URL.
+
+### 3. Single-flight auth refresh
+
+**Why:** N concurrent 401s without single-flight cause N concurrent refresh requests.
+
+**How to apply:** Wrap refresh in an actor (or `@MainActor` singleton) with an "in-flight" flag. Concurrent callers `await` the same in-flight Task.
+
+### 4. Exponential backoff with jitter on retry
+
+**Why:** Linear retry / fixed retry causes thundering herd on server recovery. Without jitter, all clients sync up.
+
+**How to apply:** `delay = min(maxDelay, base * 2^attempt) + random(0, base)`. Cap retry attempts (typically 3-5).
+
+### 5. `URLSession` configurations are typed and named
+
+**Why:** Mixing `default`, `ephemeral`, and `background` configurations with different timeouts and policies causes hard-to-debug request behavior.
+
+**How to apply:** Define named config builders (e.g. `URLSessionConfiguration.app`, `URLSessionConfiguration.background(identifier:)`). Don't inline `.default` in client code.
+
+## What NOT to do
+
+- Don't disable App Transport Security globally (`NSAllowsArbitraryLoads = YES`) — App Store rejection
+- Don't use `NSURLConnection` (deprecated)
+- Don't ship without retry caps (infinite retries against an outage = bad)
+- Don't `try?` on auth refresh and silently fail (user is logged out unexpectedly)
+- Don't store auth tokens in `UserDefaults` (use Keychain — `kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly` recommended)
+
+## Cross-links
+
+- `docs/ai-context/networking-architecture.md` — endpoint registry, cert thumbprints
+- `.github/instructions/concurrency.instructions.md` — async-await + Task cancellation rules
+- `.github/instructions/info-plist.instructions.md` — `NSAppTransportSecurity` exception domains policy

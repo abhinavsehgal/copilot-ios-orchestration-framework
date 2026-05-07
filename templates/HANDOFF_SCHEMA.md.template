@@ -1,0 +1,123 @@
+# Handoff Schema — <PROJECT_NAME>
+
+The bidirectional contract between `<PROJECT_SLUG>-orchestrator` and specialists.
+
+## Outbound (orchestrator → specialist)
+
+```yaml
+handoff:
+  version: 1
+  from: <PROJECT_SLUG>-orchestrator
+  to: <PROJECT_SLUG>-ios-<specialist>
+  hop: <integer 1-5>
+
+  goal: |
+    <One-paragraph description of what the user asked for, scoped to this specialist.>
+
+  scope:
+    paths_in:
+      - <path or glob>
+      - <path or glob>
+    paths_out:
+      - <path or glob NOT to touch>
+
+  constraints:
+    - <iOS deployment target if relevant — "iOS 15+ only">
+    - <Hard rule the specialist must respect — "Don't change User.email schema">
+
+  evidence:
+    - <file:line citation>
+    - <Info.plist:key citation>
+    - <orientation map ref>
+
+  failure_condition: |
+    <One sentence describing what observable evidence would prove the orchestrator's premise wrong. If the specialist observes this, STOP and return claim_rejected with the triggering evidence.>
+
+  acceptance_criteria:
+    - <How completion is verified — concrete, testable>
+    - <Test command that should pass>
+    - <Build command that should succeed>
+
+  budget:
+    max_files_changed: <integer>
+    max_hops: <integer ≤ 5>
+    max_lines_added: <integer>
+```
+
+## Inbound (specialist → orchestrator)
+
+```yaml
+return:
+  version: 1
+  from: <PROJECT_SLUG>-ios-<specialist>
+  to: <PROJECT_SLUG>-orchestrator
+  hop: <same as inbound>
+  status: completed   # completed | partial | claim_rejected | needs_clarification
+
+  verified_claims:
+    - "<Concrete claim with file:line / schema / test output citation>"
+    - "<Each claim must cite specific evidence — no vibes>"
+
+  unverified_claims: []
+  # If non-empty, mark each with confidence: low and explain why couldn't verify
+
+  do_not_pass_downstream_without_verification: []
+  # Things the next hop must re-verify (e.g. "schema looks right but tests pending")
+
+  files_changed:
+    - <path>
+    - <path>
+
+  tests_run:
+    - command: <COMMAND>
+      result: pass|fail
+      tail: <last ~6KB of relevant output>
+
+  budget_consumed:
+    files_changed: <integer>
+    hops: <integer>
+    lines_added: <integer>
+
+  follow_ups:
+    - "<Adjacent issue spotted but out of scope; flag for orchestrator to surface or route>"
+```
+
+## Status semantics
+
+| Status | When to use | Orchestrator response |
+|---|---|---|
+| `completed` | All `acceptance_criteria` met, `verified_claims` populated, tests pass | Mark parent task done, surface `follow_ups` |
+| `partial` | Some criteria met but `tests_run` empty for code change, or `verified_claims` thin | Reject; ask specialist to complete |
+| `claim_rejected` | Orchestrator's premise turned out wrong (`failure_condition` observed) | Stop parent task; surface to user |
+| `needs_clarification` | Handoff was ambiguous in a specific way | Orchestrator asks user the specific question; re-issue |
+
+## The "no evidence, no claim" rule
+
+Bad return:
+```yaml
+verified_claims:
+  - "Streak attribute added"
+  - "Tests pass"
+```
+
+Good return:
+```yaml
+verified_claims:
+  - "Added streak Int16 attribute on User entity (Profile.xcdatamodeld/Profile 5.xcdatamodel/contents:User:streak)."
+  - "All UserModelTests pass via xcodebuild test -only-testing:UserModelTests (8 tests, 0 failures, full output in tests_run[0].tail)."
+```
+
+Each claim cites a specific path, schema location, or test name. The orchestrator can verify each citation.
+
+## Hop counting
+
+- Hop 1: orchestrator → specialist (most common)
+- Hop 2: specialist returns; orchestrator delegates to next specialist
+- Hop 3: ...
+- **Hop 5+: escalate to user.** Task is bigger than initially modeled.
+
+## Cross-links
+
+- `.github/agents/<PROJECT_SLUG>-orchestrator.md` — issuer
+- `.github/agents/<PROJECT_SLUG>-ios-*.md` — receivers
+- `docs/ai-context/INDEX.md` — task routing that drives `to:` selection

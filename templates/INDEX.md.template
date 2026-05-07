@@ -1,0 +1,79 @@
+# <PROJECT_NAME> — AI Context Index
+
+> Master router for Copilot agents. Map every common task type to the **minimum** orientation maps + specialists needed. Read this file early in any non-trivial task.
+
+---
+
+## How to use
+
+1. Restate the task in plain words.
+2. Skim "Task type → Read this" below.
+3. Read ONLY the listed orientation maps (each ~50-150 lines).
+4. Check matching `.github/instructions/*.instructions.md` (auto-loaded by `applyTo:`).
+5. If medium/complex, hand to `@<PROJECT_SLUG>-orchestrator`.
+
+---
+
+## Task type → Read this
+
+| Task type | docs/ai-context/ | .github/instructions/ that may apply | Specialist (optional) |
+|---|---|---|---|
+| SwiftUI / UIKit views, layout, accessibility | `swiftui-patterns.md` | `swiftui.instructions.md`, `concurrency.instructions.md` | `<PROJECT_SLUG>-ios-ui` |
+| CoreData / SwiftData / Realm / persistence | `coredata-schema.md` | `coredata.instructions.md`, `concurrency.instructions.md` | `<PROJECT_SLUG>-ios-data` |
+| URLSession / Combine / API networking | `networking-architecture.md` | `networking.instructions.md`, `concurrency.instructions.md` | `<PROJECT_SLUG>-ios-network` |
+| Tests (XCTest / XCUITest / snapshots) | `testing-strategy.md` | (your tests instruction file if present) | `<PROJECT_SLUG>-ios-tests` |
+| Fastlane / TestFlight / App Store | `release-process.md` | `code-signing.instructions.md` | `<PROJECT_SLUG>-ios-release` |
+| Info.plist / entitlements / ATT / nutrition labels | `info-plist-policy.md` | `info-plist.instructions.md` | `<PROJECT_SLUG>-ios-privacy` (REVIEW-ONLY) |
+| Performance / Instruments / Crashlytics | `performance-baseline.md` | `concurrency.instructions.md` | `<PROJECT_SLUG>-ios-perf` |
+| Background tasks / silent push / lifecycle | `background-tasks.md` | `info-plist.instructions.md` (BG identifiers) | `<PROJECT_SLUG>-ios-bg` |
+| Cross-domain feature, multi-step | (this file + `ORCHESTRATION_SPOONFEEDER.md`) | varies | `<PROJECT_SLUG>-orchestrator` |
+| Bidirectional handoff format | `HANDOFF_SCHEMA.md` | n/a | orchestrator (issuer) + specialists (receivers) |
+
+---
+
+## Worked routing examples
+
+### Example 1 — "Show user streak in profile screen and persist it"
+
+1. Cross-domain (data + UI) → use `@<PROJECT_SLUG>-orchestrator`
+2. Read `swiftui-patterns.md` + `coredata-schema.md`
+3. Orchestrator delegates: `ios-data` first (schema migration) → `ios-ui` second (binding)
+4. Each specialist auto-loads their instruction file when editing matching paths
+
+### Example 2 — "VoiceOver order is wrong on ProfileView"
+
+1. UI-only → use `@<PROJECT_SLUG>-ios-ui` directly (no orchestrator needed)
+2. Read `swiftui-patterns.md` § Accessibility
+3. `swiftui.instructions.md` auto-loads when editing `Sources/Views/ProfileView.swift`
+
+### Example 3 — "Add IDFA-using analytics SDK"
+
+1. Privacy-sensitive → orchestrator routes through `<PROJECT_SLUG>-ios-privacy` (REVIEW-ONLY) FIRST for risk audit
+2. Then `<PROJECT_SLUG>-ios-network` for SDK init
+3. Then `<PROJECT_SLUG>-ios-release` for ATT prompt + nutrition label update
+
+### Example 4 — "TestFlight build failed code signing"
+
+1. Release-only → `@<PROJECT_SLUG>-ios-release`
+2. Read `release-process.md`, `code-signing.instructions.md` auto-loads
+3. Likely cause: provisioning profile expired or Match cache invalid
+
+### Example 5 — "Crashlytics top issue this week"
+
+1. Triage → `@<PROJECT_SLUG>-ios-perf`
+2. Read `performance-baseline.md`
+3. Perf specialist identifies hotspot, hands off fix to relevant specialist (likely `ios-ui` or `ios-data`)
+
+---
+
+## Reference docs
+
+- `docs/ARCHITECTURE.md` — module graph, app entry, DI
+- `docs/BUILD_SYSTEM.md` — schemes, configs, signing strategy
+- `docs/PRIVACY_AND_DATA.md` — data inventory, retention, App Privacy nutrition labels
+- `docs/DEPENDENCIES.md` — Pods/SPM list, audit dates, owners
+- `docs/RELEASE_PROCESS.md` — Fastlane lanes, ASC API key rotation
+
+## How to use this system
+
+For human-readable usage with copy-paste examples, read `docs/ai-context/ORCHESTRATION_SPOONFEEDER.md`.

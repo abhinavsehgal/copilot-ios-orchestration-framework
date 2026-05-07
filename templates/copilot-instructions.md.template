@@ -1,0 +1,88 @@
+# <PROJECT_NAME> — Copilot Instructions (Repository Router)
+
+> **What this is.** This file is auto-loaded into EVERY GitHub Copilot interaction in this repo — inline completions, Chat, Code Review, Cloud Agent. Keep it thin (under 200 lines). It's a router, not a manual.
+
+## Project identity
+
+<PROJECT_NAME> is an iOS application (`<XCODE_SCHEME>` scheme in `<XCODE_WORKSPACE>`) targeting iOS <IOS_DEPLOYMENT_TARGET>+. <ONE_SENTENCE_PRODUCT_DESCRIPTION>
+
+## Universal evidence rule — "no evidence, no claim"
+
+If a claim cannot be tied to a `file:line`, `Info.plist:key`, schema, App Store guideline, or test output, mark it as `confidence: low` (outbound) or move to `unverified_claims` (inbound). Hallucinations don't pass the orchestrator's validation.
+
+## Golden rules (always)
+
+1. **Never push to `main` or production without project-owner approval.**
+2. **Always start on `<DEFAULT_BASE_BRANCH>`.** Run `<BUILD_COMMAND>` before commit.
+3. **Don't refactor outside the task.** Preserve existing behavior unless asked.
+4. **Read the matching `.github/instructions/<NAME>.instructions.md` before editing.** Auto-loaded by `applyTo:` glob; if you see one in context, read its Hard rules first.
+5. **Never commit signing material:** `.cer`, `.p12`, `.mobileprovision`, `*.keychain-db`, anything matching `secret`/`credentials`/`private-key`. Use the `/commit-push-pr` slash prompt — it refuses to stage these.
+6. **For privacy-touching changes** (Info.plist, entitlements, third-party SDK additions), `ios-privacy` REVIEW-ONLY agent must audit before merge.
+7. **`@MainActor` discipline** — anything mutating `@Published` / `@State` / UIView state runs on main. Use `await MainActor.run { }` for async returns.
+8. **Multi-agent handoffs are bidirectional and structured.** Orchestrator → specialist uses `handoff:` YAML. Specialist → orchestrator uses `return:` YAML. See `docs/ai-context/HANDOFF_SCHEMA.md`.
+
+## Mandatory workflow (every non-trivial task)
+
+1. Restate the task.
+2. Identify affected specialist(s) (UI / data / network / tests / release / etc.).
+3. Read `docs/ai-context/INDEX.md`.
+4. Read the minimum orientation map(s) flagged for this task (each ~50-150 lines).
+5. **For each file you plan to edit, look up matching `.github/instructions/*.instructions.md` and read it.**
+6. Use a specialist agent (`@<SPECIALIST_NAME>`) only when useful. For medium/complex cross-domain tasks, use `@<PROJECT_SLUG>-orchestrator`.
+7. Inspect code before proposing changes.
+8. Smallest safe change.
+9. Run relevant checks (`xcodebuild test`, snapshot tests, accessibility audit per task).
+10. **Definition of done:** report changed files, tests run, risks, follow-ups, AND the list of `.github/instructions/*.instructions.md` files read before editing.
+
+## Task type → Read this
+
+| Task touches… | Read first | Specialist (optional) |
+|---|---|---|
+| SwiftUI / UIKit views, layout, accessibility | `docs/ai-context/swiftui-patterns.md` | `@<PROJECT_SLUG>-ios-ui` |
+| CoreData / SwiftData / Realm / file storage | `docs/ai-context/coredata-schema.md` | `@<PROJECT_SLUG>-ios-data` |
+| URLSession / async-await / Combine networking | `docs/ai-context/networking-architecture.md` | `@<PROJECT_SLUG>-ios-network` |
+| Tests (unit / UI / snapshot) | `docs/ai-context/testing-strategy.md` | `@<PROJECT_SLUG>-ios-tests` |
+| Fastlane / TestFlight / App Store Connect / release | `docs/ai-context/release-process.md` | `@<PROJECT_SLUG>-ios-release` |
+| Info.plist / entitlements / ATT / nutrition labels | `docs/ai-context/info-plist-policy.md` | `@<PROJECT_SLUG>-ios-privacy` (REVIEW-ONLY) |
+| Performance / Instruments / Crashlytics triage | `docs/ai-context/performance-baseline.md` | `@<PROJECT_SLUG>-ios-perf` |
+| Background tasks / silent push / lifecycle | `docs/ai-context/background-tasks.md` | `@<PROJECT_SLUG>-ios-bg` |
+| Cross-domain feature, multi-step | `docs/ai-context/INDEX.md` + `docs/ai-context/ORCHESTRATION_SPOONFEEDER.md` | `@<PROJECT_SLUG>-orchestrator` |
+
+## Branches & deploy
+
+| Branch | Purpose | Where it goes |
+|---|---|---|
+| `<DEFAULT_BASE_BRANCH>` | Daily integration | TestFlight via Fastlane (`fastlane beta`) |
+| `main` | Production releases | App Store via Fastlane (`fastlane release`) |
+| `feature/*` | Per-task feature branches | merge → `<DEFAULT_BASE_BRANCH>` |
+| `release/*` | Release candidates | merge → `main`, then tag |
+| `hotfix/*` | Production hotfixes | merge → `main` AND `<DEFAULT_BASE_BRANCH>` |
+
+## Local dev
+
+```bash
+# Build
+<BUILD_COMMAND>
+
+# Test
+<TEST_COMMAND>
+
+# Format / lint (if SwiftLint / SwiftFormat installed)
+swiftlint --strict
+swiftformat .
+
+# Open Xcode
+open <XCODE_WORKSPACE>
+```
+
+## Reference docs (full detail)
+
+- `docs/ARCHITECTURE.md` — module graph, app entry points, dependency injection
+- `docs/BUILD_SYSTEM.md` — schemes, configurations, xcconfig overlays, signing strategy
+- `docs/PRIVACY_AND_DATA.md` — data inventory, retention, App Privacy nutrition labels
+- `docs/DEPENDENCIES.md` — Pods / SPM, audit dates, owners
+- `docs/RELEASE_PROCESS.md` — Fastlane lanes, App Store Connect API key rotation, ASO
+
+## How to use this system
+
+For human-readable usage with copy-paste examples, read `docs/ai-context/ORCHESTRATION_SPOONFEEDER.md`.
