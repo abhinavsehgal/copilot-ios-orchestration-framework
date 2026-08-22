@@ -14,7 +14,7 @@ Each agent in `.github/agents/` declares an `mcp-servers:` allowlist:
 ---
 name: ios-release
 description: Fastlane / TestFlight / App Store Connect specialist
-tools: Read, Edit, MultiEdit, Bash, Grep, Glob, mcp__app-store-connect__*, mcp__github__*
+tools: read, edit, bash, grep, glob, app-store-connect/*, github/*
 mcp-servers: app-store-connect, github
 target: vscode, github-copilot
 ---
@@ -27,11 +27,11 @@ The harness restricts the agent to MCPs in `mcp-servers:`. So `ios-release` can 
 The framework works with **no MCPs at all**. All iOS toolchain access happens via `Bash` shell-out:
 
 ```bash
-# Build
-xcodebuild -workspace MyApp.xcworkspace -scheme MyApp build
+# Build (project-only repo: -project <PROJECT>.xcodeproj instead of -workspace)
+xcodebuild -workspace <WORKSPACE>.xcworkspace -scheme <SCHEME> build
 
 # Test
-xcodebuild test -workspace MyApp.xcworkspace -scheme MyApp -destination 'platform=iOS Simulator,name=iPhone 15'
+xcodebuild test -workspace <WORKSPACE>.xcworkspace -scheme <SCHEME> -destination 'platform=iOS Simulator,name=<DEVICE>'
 
 # Simulator control
 xcrun simctl boot "iPhone 15"
@@ -99,12 +99,12 @@ Status: community implementations exist; the official ASC API key route is well-
 | | |
 |---|---|
 | What it's for | Query TestFlight builds, list app metadata, fetch crash reports, review status |
-| When to install | Once `ios-release` is doing regular submission work and Fastlane already handles the heavy lift |
+| When to install | Once `ios-release` is doing regular submission work and Fastlane / Xcode Cloud already handles the heavy lift |
 | Used by agents | `ios-release`, `ios-perf` (for crash report fetch) |
 | Verification | Ask Copilot *"list the 5 most recent TestFlight builds"* — should return real ASC data |
 | Min Copilot tier | Pro / Business / Enterprise; requires App Store Connect API key configured |
 
-If no MCP exists, shell out to Fastlane:
+If no MCP exists, shell out to Fastlane (or query the App Store Connect API directly with an API key):
 ```bash
 fastlane run latest_testflight_build_number app_identifier:com.example.MyApp
 ```
@@ -169,7 +169,7 @@ Status: Likely community-only; may not exist as a dedicated MCP.
 These exist or might exist; install only if your project has a specific need:
 
 - **fastlane MCP** — wraps fastlane lanes; alternative to Bash shell-out
-- **TestFlight automation MCP** — schedule beta builds; usually overkill (Fastlane handles it)
+- **TestFlight automation MCP** — schedule beta builds; usually overkill (Fastlane or Xcode Cloud handles it)
 - **HealthKit / iCloud / CloudKit MCPs** — for apps deeply tied to those frameworks
 - **MapKit MCP** — for location-heavy apps
 - **AppCenter MCP** — if you still use App Center for distribution
@@ -185,31 +185,31 @@ These exist or might exist; install only if your project has a specific need:
 Putting it together — what each iOS specialist's `mcp-servers:` field looks like in a project that has installed Tier 1 + a couple of Tier 2 MCPs:
 
 ```yaml
-# .github/agents/<your-app>-orchestrator.md
+# .github/agents/<your-app>-orchestrator.agent.md
 mcp-servers: github
 
-# .github/agents/ios-ui.md
+# .github/agents/ios-ui.agent.md
 mcp-servers: mobile-ui-automation
 
-# .github/agents/ios-data.md
+# .github/agents/ios-data.agent.md
 # (none — pure file-system work; let it use Bash for sqlite if needed)
 
-# .github/agents/ios-network.md
+# .github/agents/ios-network.agent.md
 mcp-servers: github
 
-# .github/agents/ios-tests.md
+# .github/agents/ios-tests.agent.md
 mcp-servers: xcodebuild, mobile-ui-automation
 
-# .github/agents/ios-release.md
+# .github/agents/ios-release.agent.md
 mcp-servers: xcodebuild, app-store-connect, github
 
-# .github/agents/ios-privacy.md
+# .github/agents/ios-privacy.agent.md
 # REVIEW-ONLY — no MCPs needed; pure read access
 
-# .github/agents/ios-perf.md
+# .github/agents/ios-perf.agent.md
 mcp-servers: xcodebuild, sentry, app-store-connect
 
-# .github/agents/ios-bg.md
+# .github/agents/ios-bg.agent.md
 mcp-servers: xcodebuild
 ```
 
@@ -222,6 +222,6 @@ mcp-servers: xcodebuild
 
 ## Cross-links
 
-- [`02-ARCHITECTURE.md`](02-ARCHITECTURE.md) — the `.github/agents/<NAME>.md` shape including `mcp-servers:`
+- [`02-ARCHITECTURE.md`](02-ARCHITECTURE.md) — the `.github/agents/<NAME>.agent.md` shape including `mcp-servers:`
 - [`03-IOS-SPECIALISTS-GUIDE.md`](03-IOS-SPECIALISTS-GUIDE.md) — what each specialist needs from MCPs
 - [`prompts/REFINEMENT-PROMPT.md`](../prompts/REFINEMENT-PROMPT.md) — the quarterly audit that re-evaluates MCP allowlist drift

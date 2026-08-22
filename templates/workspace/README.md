@@ -5,6 +5,7 @@ the `.code-workspace` in VS Code.
 
 | File | Goes to |
 |---|---|
+| `bootstrap.sh.template` | (run it — creates everything below; fills placeholders, `.gitignore`, `.code-workspace`, `agents:` allowlist and service-map rows from `workspace.json`) |
 | `copilot-instructions.md.template` | `.github/copilot-instructions.md` |
 | `workspace.code-workspace.template` | `<ws>.code-workspace` |
 | `workspace.json.template` | `workspace.json` |

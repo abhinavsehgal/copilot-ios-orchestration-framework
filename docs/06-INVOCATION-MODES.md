@@ -8,7 +8,7 @@ How Copilot's different invocation surfaces interact with this framework, with i
 |---|---|---|
 | **Inline completions** | Inside any file, while typing | Auto-complete Swift code, fill in protocol conformances, suggest closures |
 | **Inline Chat** (Cmd+I in VS Code, ⌃⌘I in Xcode) | Per-file context menu | Quick refactor or "explain this method" |
-| **Chat panel** | VS Code sidebar / Xcode sidebar / GitHub.com / JetBrains tool window | Multi-turn work, agent selection, skills + slash prompts |
+| **Chat panel** | VS Code sidebar / GitHub.com / JetBrains tool window (Copilot for Xcode has a chat panel too — custom agents, skills and hooks there are not verified; see the matrix note) | Multi-turn work, agent selection, skills + slash prompts |
 | **Code Review** | github.com PR | Auto-comment on PRs based on `applyTo:` instructions |
 | **Cloud Agent** (autonomous coding agent) | github.com / Slack | Long-running autonomous tasks; runs in true isolation |
 | **Copilot CLI, headless** (`copilot -p`) — v1.1 | Terminal / CI | Scripted runs of a skill or agent; cross-repo delegation (Chapter 13) |
@@ -18,7 +18,7 @@ How Copilot's different invocation surfaces interact with this framework, with i
 ### Inline completions
 
 - Loads `.github/copilot-instructions.md` (the thin router)
-- Does NOT load `.github/instructions/<NAME>.instructions.md` automatically (those are Chat-context loads)
+- Does NOT load `.github/instructions/<NAME>.instructions.md` automatically (those are Chat-context loads) — **not re-verified**; see the gotcha below
 - Does NOT invoke agents
 
 **Implication:** keep `.github/copilot-instructions.md` thin. Anything you put there gets loaded into every keystroke-level suggestion. Heavy stuff goes elsewhere.
@@ -53,7 +53,7 @@ iOS-specific tip: when the active file is in `Sources/Views/`, the `swiftui.inst
 - Does NOT run agents
 - Does NOT run prompt files (IDE-only)
 
-**Implication for iOS:** Code Review is good for catching `applyTo:`-matched rule violations on PRs (e.g. *"this PR uses `next/image` for an avatar"* — wait, wrong stack — *"this PR force-unwraps an optional in a public API; rule X says don't"*). It's not good for cross-domain analysis (use Chat or Cloud Agent for that).
+**Implication for iOS:** Code Review is good for catching `applyTo:`-matched rule violations on PRs (e.g. *"this PR force-unwraps an optional in a public API; rule X says don't"*). It's not good for cross-domain analysis (use Chat or Cloud Agent for that).
 
 ### Cloud Agent (autonomous)
 

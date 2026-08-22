@@ -48,7 +48,7 @@ node --version         # only needed if you later turn on hooks
 Missing `copilot`? Install it from GitHub's Copilot CLI page (docs.github.com → Copilot → Copilot
 CLI → Install). Missing `jq`? `brew install jq` on a Mac, `winget install jqlang.jq` on Windows.
 
-✓ **You know it worked when:** all six print a version, and in VS Code the Copilot Chat panel opens
+✓ **You know it worked when:** all five print a version (six if you installed `node` for hooks), and in VS Code the Copilot Chat panel opens
 with **Agent** in the mode dropdown. (Keep Xcode for building, running and Instruments; the agents
 are driven from VS Code or the CLI.)
 
@@ -109,7 +109,7 @@ instruction files with their globs (`Sources/**/Views/**/*.swift` → `swiftui.i
 `*.entitlements` + `Info.plist` → `info-plist.instructions.md`, …), and a list of **Open Questions**. Answer the questions. Cross out specialists
 that feel wrong. Fewer is better.
 
-> ⚠ **The orchestrator must be named `<repo-name>-orchestrator`** (for example `orders-orchestrator`).
+> ⚠ **The orchestrator must be named `<repo-name>-orchestrator`** (for example `orders-api-orchestrator`).
 > Not just `orchestrator`. In Part 3 every repo's manager sits on the same desk, and names must not collide.
 
 ✓ You have a short list of specialist names you agree with, and `git status` is still clean.
@@ -137,7 +137,8 @@ What it creates:
 | `docs/<AREA>_BACKLOG.md` | Where "we'll do it later" must be written down. |
 
 ✓ `ls .github/agents` lists your orchestrator and specialists. The app still builds:
-`xcodebuild -workspace <App>.xcworkspace -scheme <App> -destination 'generic/platform=iOS Simulator' build`.
+`xcodebuild -workspace <WORKSPACE>.xcworkspace -scheme <SCHEME> -destination 'generic/platform=iOS Simulator' build`
+(a project-only repo swaps `-workspace <WORKSPACE>.xcworkspace` for `-project <PROJECT>.xcodeproj`).
 
 ### 4. Check the manager shows up
 
@@ -225,7 +226,17 @@ cd <team>-workspace
 
 ### 2. Copy the workspace templates into place
 
-**Why:** fourteen files, each with a fixed home. `templates/workspace/README.md` has the same table.
+**Why:** fourteen files, each with a fixed home. The bootstrap script does the copying AND fills the
+per-repo placeholders, `.gitignore`, the `.code-workspace` folder list, the orchestrator's subagent
+allowlist and the service-map rows from `workspace.json` — so fill the manifest first (step 3) if you
+want the short path:
+
+```bash
+cp ~/frameworks/copilot-ios/templates/workspace/workspace.json.template workspace.json   # fill it, then:
+bash ~/frameworks/copilot-ios/templates/workspace/bootstrap.sh.template ~/frameworks/copilot-ios
+```
+
+Or by hand (`templates/workspace/README.md` has the same table):
 
 ```bash
 T=~/frameworks/copilot-ios/templates/workspace
@@ -287,7 +298,8 @@ and skills are all available at once. The workspace file also switches on nested
 ✓ The Explorer shows the workspace folder plus every child. The agent dropdown shows
 `<team>-orchestrator`, `contract-guardian`, `service-mapper` *and* each repo's own orchestrator.
 
-> ⚠ Every repo ships a worker called `backend-api`. On the desk those names collide. Rule: from the
+> ⚠ Two repos can ship a worker with the same name (every API repo's `backend-api`; an app and an SDK
+> repo's `ios-network`). On the desk those names collide. Rule: from the
 > workspace, **only ever pick an orchestrator by name**. Never a worker. The workspace manager
 > already knows this.
 

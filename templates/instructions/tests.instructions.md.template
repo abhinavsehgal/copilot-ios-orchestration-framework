@@ -1,0 +1,52 @@
+---
+applyTo: "Tests/**/*.swift,**/*Tests/**/*.swift,**/*.xctestplan"
+---
+
+# Test Instructions (XCTest / XCUITest / snapshot)
+
+> Auto-loaded when editing test targets. Hard-won invariants for iOS test code. Owned by `ios-tests`.
+
+## Hard rules
+
+### Every test owns its state — no shared persistent store between tests
+
+**Why:** a shared CoreData/SwiftData store (or `UserDefaults.standard`, or the Keychain) makes test
+order a hidden input: a test passes alone and fails in the suite, or the reverse.
+
+**How to apply:** in-memory store per test (`NSInMemoryStoreType` / `ModelConfiguration(isStoredInMemoryOnly: true)`),
+a `UserDefaults(suiteName:)` you remove in `tearDown`, and a Keychain service name unique to the
+test run. Never assert on data another test created.
+
+### Snapshot tests pin everything non-deterministic
+
+**Why:** a snapshot that contains "today", a random id, a locale-formatted number or the status bar
+time diffs on every run and gets re-recorded until nobody trusts it.
+
+**How to apply:** inject a fixed `Date`, a seeded generator and an explicit `Locale`/`TimeZone`;
+record on one simulator model + OS version and pin that destination in the test plan
+(`<DEVICE>`, `<OS_VERSION>`); keep snapshot precision explicit.
+
+### UI tests drive by accessibility identifiers, never by label text
+
+**Why:** label text is localised and changes with copy; identifiers are the contract between the
+app and its tests.
+
+**How to apply:** every tappable or asserted element sets `accessibilityIdentifier`; `XCUIApplication`
+launches with a `--ui-testing` argument the app honours (fixtures, no network, animations off).
+
+### Test doubles are protocol-backed, not subclass-backed
+
+**How to apply:** network, storage and clock go behind protocols in the app target; tests inject
+fakes. No `URLProtocol` swizzling across the whole suite — scope it per test and remove it in `tearDown`.
+
+## What NOT to do
+
+- Don't call the real network, the real Keychain or the real `UserDefaults.standard` from a test.
+- Don't `sleep()` for async work — use `XCTestExpectation` / `await` with a bounded timeout.
+- Don't leave a test that runs only on one developer's simulator — the destination is in the test plan.
+- Don't skip a flaky test silently; quarantine it with a reason and a ticket.
+
+## Cross-links
+
+- `.github/agents/ios-tests.agent.md` — owner of this file.
+- `docs/08-IOS-COMMON-PITFALLS.md` — Pitfalls 21 (shared store) and 22 (non-deterministic snapshots).

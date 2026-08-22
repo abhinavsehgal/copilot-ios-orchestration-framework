@@ -1,6 +1,6 @@
 # Copilot iOS Orchestration Framework
 
-> **Version 1.1.0** ([changelog](CHANGELOG.md)) · MIT license · iOS-only by design
+> **Version 1.1.1** ([changelog](CHANGELOG.md)) · MIT license · iOS-only by design
 >
 > **v1.1.0 (2026-08-22) — three months of production use on the stack-agnostic parent, folded into the iOS edition, and three platform claims retracted.** New chapters: **12 — Project truth, learnings and the evidence ladder** (`PROJECT.md` with a date-stamped "what is live on the App Store / TestFlight" table) and **13 — Multi-repo workspaces** (one iOS app repo + N API repos, with the `.code-workspace` + manifest + delegation pattern and version-pinned shared Swift packages). Eighteen new pitfalls — nine framework lessons and nine iOS-specific ones (APNs environment, `apns-topic`, the one-shot notification prompt, `WKWebView` route changes, Guideline 4.8, the `NSURLSession` cookie jar, orientation locks, replayed notification taps, build flavours). **Retracted, because the platform moved:** Copilot *does* have lifecycle hooks now (`.github/hooks/*.json` — chapter 10 is rewritten around them, with an `xcodebuild` build-gate sized for a busy CI box); custom agents *can* invoke custom agents (VS Code `agents:` is an allowlist); and **agent skills** (`.github/skills/`) — not prompt files — are the cross-surface equivalent of Claude Code skills. Every platform claim in v1.1.0 carries a verified-on date.
 >
@@ -57,7 +57,7 @@ copilot-ios-orchestration-framework/
 │   ├── 07-FOLDER-STRUCTURE.md             ← three-tier docs organization
 │   ├── 08-IOS-COMMON-PITFALLS.md          ← 40 lessons: framework + iOS-specific (22 from v1.0, 18 new in v1.1)
 │   ├── 09-IOS-RUNBOOK.md                  ← step-by-step iOS bootstrap (~2-4 hours)
-│   ├── 10-MECHANICAL-ENFORCEMENT.md       ← (rewritten v1.1) Copilot hooks: the contract, five patterns, the xcodebuild build-gate, eleven design rules
+│   ├── 10-MECHANICAL-ENFORCEMENT.md       ← (rewritten v1.1) Copilot hooks: the contract, five patterns, the xcodebuild build-gate, twelve design rules
 │   ├── 11-IOS-MCP-CATALOG.md              ← curated iOS MCP servers + when to install each
 │   ├── 12-PROJECT-TRUTH-AND-LEARNINGS.md  ← (v1.1) PROJECT.md / LEARNINGS.md / backlogs, the evidence ladder, the six-gate playbook
 │   └── 13-MULTI-REPO-WORKSPACES.md        ← (v1.1) one iOS app + N API repos: layers, three delegation mechanisms, contracts, shared Swift packages
@@ -83,7 +83,7 @@ copilot-ios-orchestration-framework/
     │   ├── ios-data-agent.md.template             ← CoreData / SwiftData / Realm / file storage
     │   ├── ios-network-agent.md.template          ← URLSession / async-await / Combine / certs
     │   ├── ios-tests-agent.md.template            ← XCTest / XCUITest / snapshot tests
-    │   ├── ios-release-agent.md.template          ← Fastlane / TestFlight / App Store Connect
+    │   ├── ios-release-agent.md.template          ← Fastlane or Xcode Cloud / TestFlight / App Store Connect
     │   ├── ios-privacy-agent.md.template          ← REVIEW-ONLY: Info.plist / ATT / nutrition labels
     │   ├── ios-perf-agent.md.template             ← Instruments / hangs / memory / launch time
     │   ├── ios-bg-agent.md.template               ← BGTaskScheduler / silent push / lifecycle
@@ -97,6 +97,7 @@ copilot-ios-orchestration-framework/
     │   ├── networking.instructions.md.template
     │   ├── info-plist.instructions.md.template
     │   └── code-signing.instructions.md.template
+    │   └── tests.instructions.md.template           ← (v1.1) XCTest isolation, deterministic snapshots, identifiers, doubles
     │
     ├── skills/                                    ← (v1.1) cross-surface Agent Skills — cloud agent, CLI and every IDE
     │   ├── commit-push-pr/SKILL.md.template       ← /commit-push-pr (xcodebuild gate, signing-material refusal)
@@ -105,7 +106,7 @@ copilot-ios-orchestration-framework/
     │
     ├── hooks/                                     ← (v1.1) hooks.json + hook-io / correction-detect / doc-freshness-track / lint-fix (swiftformat) / stop-gate (xcodebuild, 20-min cap)
     │
-    ├── workspace/                                 ← (v1.1) the multi-repo layer: .code-workspace, manifest, router, orchestrator + 2 specialists, contract instructions, /delegate skill + scripts
+    ├── workspace/                                 ← (v1.1) the multi-repo layer: .code-workspace, manifest, router, orchestrator + 2 specialists, contract instructions, /delegate skill + scripts + bootstrap.sh (creates the whole layer from a filled workspace.json)
     │
     └── prompts/                                   ← IDE-only prompt files (v1.0 forms, superseded by skills/)
         ├── prompt.md.template                     ← generic prompt-file shape
@@ -122,7 +123,9 @@ copilot-ios-orchestration-framework/
 ### Scenario A — Brownfield iOS project (most common)
 
 ```bash
-# 1. Verify Copilot is signed in inside Xcode (or VS Code with the Swift extension if you prefer)
+# 1. Verify Copilot is signed in in VS Code (or the Copilot CLI) — that is where the custom agents,
+#    skills and hooks run. Xcode stays the build tool; custom-agent support in Copilot for Xcode is
+#    not verified (see docs/06-INVOCATION-MODES.md).
 #    https://docs.github.com/en/copilot/getting-started
 
 # 2. Open your iOS project root in your IDE
@@ -147,7 +150,8 @@ ls .github/agents/                             # should list ios-ui.agent.md, io
 ls .github/instructions/                       # should list domain-specific instruction files
 ls .github/skills/                             # commit-push-pr, verify-build, correction-capture, <your-app>-engineering
 ls docs/ai-context/                            # INDEX, PROJECT, LEARNINGS, GLOSSARY, HANDOFF_SCHEMA, …
-xcodebuild -workspace MyApp.xcworkspace -scheme MyApp build  # should still succeed
+xcodebuild -workspace <WORKSPACE>.xcworkspace -scheme <SCHEME> build   # should still succeed
+#   (project-only repo: xcodebuild -project <PROJECT>.xcodeproj -scheme <SCHEME> build)
 
 # 8. Try a real task via the orchestrator
 #    Type @<your-app>-orchestrator in Copilot Chat with a small bug or feature
@@ -157,7 +161,7 @@ xcodebuild -workspace MyApp.xcworkspace -scheme MyApp build  # should still succ
 git add .github/ docs/ai-context/ docs/_archive/ docs/*_BACKLOG.md
 git commit -m "chore: bootstrap Copilot iOS orchestration framework"
 git push -u origin setup/copilot-ios-framework
-gh pr create --base develop --title "Bootstrap Copilot iOS orchestration"
+gh pr create --base <your-base-branch> --title "Bootstrap Copilot iOS orchestration"
 ```
 
 Estimated time: **2-4 hours** (split across phases — see [`docs/09-IOS-RUNBOOK.md`](docs/09-IOS-RUNBOOK.md)).

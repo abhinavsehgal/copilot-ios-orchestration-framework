@@ -8,7 +8,7 @@ You are running a refinement pass on the Copilot iOS Orchestration Framework set
 
 ### A1. Specialist usage audit
 
-For each `.github/agents/*.md`:
+For each `.github/agents/*.agent.md` (and any bare `*.md` still loading as an agent):
 - Has it been invoked in the last 30 days? (Heuristic: search PR titles + commit messages + issue threads for `@<agent-name>` mentions, and Copilot Chat history if accessible.)
 - If invoked: how many times, on what kinds of tasks?
 - If NOT invoked: is it defensively useful (e.g. `ios-privacy` REVIEW-ONLY agent that only fires on PRs touching Info.plist, low traffic but high impact), OR is it dead weight?
@@ -37,7 +37,7 @@ Report:
 
 Read `.github/copilot-instructions.md`:
 - Line count? (Target: under 200)
-- Any orchestrator-persona-shaped content that should be in `.github/agents/<your-app>-orchestrator.md` instead?
+- Any orchestrator-persona-shaped content that should be in `.github/agents/<your-app>-orchestrator.agent.md` instead?
 - Any iOS-specific gotchas that should move to a dedicated `.github/instructions/<NAME>.instructions.md`?
 
 Report each over-200-lines candidate for promotion / move.
@@ -84,7 +84,7 @@ Propose each as a one-line patch to the appropriate instruction file.
 
 For each `.github/skills/*/SKILL.md` and each `.github/prompts/*.prompt.md`:
 - Is it being invoked? How often? Is any skill auto-loading on unrelated tasks (vague `description`)?
-- Does the workflow still match the team's actual git / CI / release flow (Fastlane lanes, scheme names)?
+- Does the workflow still match the team's actual git / CI / release flow (Fastlane lanes or Xcode Cloud workflows, scheme names)?
 - Is any workflow the cloud agent or the CLI needs still a prompt file only (IDE-only)? → propose converting it to a skill
 - A skill and a prompt file with the same name? → keep one
 - Any new repeatable workflow worth a new skill?
@@ -93,7 +93,7 @@ Propose additions / modifications / removals.
 
 ### A9. Platform drift (v1.1.0)
 
-The platform moves under the framework's conventions (Pitfall 23). Re-read the official pages for custom agents, Agent Skills, hooks and the Copilot CLI, and diff them against what this project's agents, instruction files, skills and `docs/ai-context/HOOKS.md` assume. Three claims this framework itself made in v1.0 are now retracted — check the project has not inherited them:
+The platform moves under the framework's conventions (Pitfall 23). Re-read the official pages for custom agents, Agent Skills, hooks and the Copilot CLI, and diff them against what this project's agents, instruction files, skills and `.github/hooks/*.json` assume. Three claims this framework itself made in v1.0 are now retracted — check the project has not inherited them:
 
 - "Copilot has no hooks" — it does (`.github/hooks/*.json`; `preToolUse` can deny, `agentStop` can block). Is the `xcodebuild` build-gate or correction-capture still living only in a pre-commit hook or an IDE setting because of the old claim?
 - "Cross-agent invocation has no allowlist" — VS Code's `agents:` is one; the cloud agent still has none. Does the orchestrator declare `agents:` with the exact specialist names? Does any specialist (it should not)?
@@ -112,13 +112,13 @@ Also check: no `.chatmode.md` files remain (retired → `.agent.md`); agent file
 
 ## Phase B — Propose changes (NO writes yet)
 
-Output the audit as a single proposal block:
+Output the audit as a single proposal block — one row per proposed change, rows grouped by the audit section (A1–A10) that produced them, and a section that produced no change listed explicitly as "A<n>: nothing to change":
 
 ### Proposed changes
 
 | # | Change | File(s) | Reason | Risk |
 |---|---|---|---|---|
-| 1 | Remove `ios-watch` specialist | `.github/agents/ios-watch.md` | 0 invocations in 90 days; project doesn't ship watchOS | Low |
+| 1 | Remove `ios-watch` specialist | `.github/agents/ios-watch.agent.md` | 0 invocations in 90 days; project doesn't ship watchOS | Low |
 | 2 | Tighten `swiftui.instructions.md` `applyTo:` from `Sources/**/*.swift` to `Sources/Views/**/*.swift,Sources/**/*View.swift` | `.github/instructions/swiftui.instructions.md` | Current glob over-fires on non-view files, polluting context | Low |
 | 3 | Split `swiftui.instructions.md` (currently 310 lines) into rendering + state + accessibility | `.github/instructions/swiftui-*.instructions.md` (3 files) | Well past the 150-line guidance; the rules that matter are buried | Med |
 | 4 | Add Hard rule to `concurrency.instructions.md`: *"async functions returning to UI use `await MainActor.run { }` or `Task { @MainActor in }`"* | `.github/instructions/concurrency.instructions.md` | 4 PR review hits this month for missing main-thread switch | Low |

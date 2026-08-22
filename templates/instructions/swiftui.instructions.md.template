@@ -73,4 +73,4 @@ A bad iOS instruction file:
 - Aspirational rules ("we should always use SwiftUI") with no enforcement mechanism
 - Style preferences (lint config does this)
 - Contradicts another instruction file's `applyTo:` glob
-- > 3,000 chars (split into separate files)
+- > 150 lines (split into separate files — see the budget note above)

@@ -9,8 +9,9 @@
 | `lint-fix.mjs.template` | `.github/scripts/lint-fix.mjs` | `postToolUse` — Pattern 4 |
 | `stop-gate.mjs.template` | `.github/scripts/stop-gate.mjs` | `agentStop` — Patterns 2 + 3 + 5 (gate) |
 
-Add `.github/hooks/.state/` to `.gitignore`. Fill every `<PLACEHOLDER>` (`<WORKSPACE>`, `<SCHEME>`,
-`<PROTECTED_BRANCH>`, `<CHANGELOG_PATH>`, `<STATE_DOC_PATH>`). Verify in a FRESH session (docs/10 §
+Add `.github/hooks/.state/` to `.gitignore`. Fill every `<PLACEHOLDER>` (`<WORKSPACE>`, `<SCHEME>` — or `<PROJECT>` on a
+project-only repo — `<PROTECTED_BRANCH>`, `<CHANGELOG_PATH>`, `<STATE_DOC_PATH>`, `<REPO_NAME_FRAGMENT>`;
+`<PER_SESSION_PATH>` only if sessions share a checkout). Verify in a FRESH session (docs/10 §
 Verification). Pattern 1 (rule surfacing) needs no script — `applyTo:` is native.
 
 **iOS sizing.** `stop-gate.mjs` runs `xcodebuild … build` with a 20-minute internal cap

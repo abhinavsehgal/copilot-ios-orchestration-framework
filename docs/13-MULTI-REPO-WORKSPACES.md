@@ -98,6 +98,8 @@ them. Skip this layer below three repos.
 
 Create it when a task description regularly contains more than one repo name. Layout:
 
+`templates/workspace/bootstrap.sh.template` creates all of this from a filled `workspace.json` (it fills the per-repo placeholders, generates `.gitignore` and the `.code-workspace` folder list from the manifest's paths, fills the orchestrator's `agents:` allowlist and the service-map rows, and lists what is left to fill by hand). The layout it produces:
+
 ```
 workspace/                                  ← its own git repo; NO CI; deploys nothing
 ├── <ws>.code-workspace                      ← folders: ".", "ios-app", "services/orders-api", "web", "android-app", …
@@ -113,7 +115,7 @@ workspace/                                  ← its own git repo; NO CI; deploys
 │   │   └── cross-repo-contracts.instructions.md   ← applyTo: "**" — the contract protocol, always on
 │   ├── skills/
 │   │   └── delegate/SKILL.md                ← /delegate <repo> <handoff> — runs the child's orchestrator via the CLI
-│   └── hooks/framework.json                 ← workspace hooks (correction-capture only)
+│   └── hooks/framework.json                 ← OPTIONAL — not among the 14 workspace templates; copy templates/hooks/ and keep correction-capture only
 ├── scripts/
 │   ├── sync-repos.sh                        ← clone/fetch every repo in the manifest; never resets a branch
 │   └── delegate.sh                          ← cd <child> && copilot -p … --agent=<repo>-orchestrator
@@ -161,8 +163,8 @@ the child needs with `--allow-tool=`; never `--allow-all-tools` on a repo you do
 `-p` runs that repo's hooks without a prompt.
 
 **Mechanism B — in-editor subagents** (interactive cross-repo work in VS Code). The workspace
-orchestrator's `agents:` lists the child orchestrators by name (`web-orchestrator`,
-`orders-orchestrator`, …); VS Code loads them from the child folders; `runSubagent` invokes them;
+orchestrator's `agents:` lists the child orchestrators by name (`ios-app-orchestrator`,
+`orders-api-orchestrator`, …); VS Code loads them from the child folders; `runSubagent` invokes them;
 with `chat.subagents.allowInvocationsFromSubagents` enabled each child orchestrator can in turn
 invoke its own specialists. Every child's `applyTo:` instructions and hooks apply because they are
 workspace folders. The cost is the collision hazard from the table above: **only orchestrators are

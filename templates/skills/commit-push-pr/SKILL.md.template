@@ -7,7 +7,7 @@ description: Validate → commit → push → open/update PR against <DEFAULT_BA
 
 # /commit-push-pr
 
-> **Invocation.** `/commit-push-pr` on any Copilot surface (cloud agent, CLI, VS Code, JetBrains, Visual Studio) from a feature branch, or auto-loaded when the request matches the description. Skills are cross-surface; the older prompt-file form is IDE-only.
+> **Invocation.** `/commit-push-pr` on any Copilot surface that loads agent skills (cloud agent, CLI, VS Code, JetBrains — Visual Studio is not documented; see the surface matrix) from a feature branch, or auto-loaded when the request matches the description. Skills are cross-surface; the older prompt-file form is IDE-only.
 
 ## When to invoke
 

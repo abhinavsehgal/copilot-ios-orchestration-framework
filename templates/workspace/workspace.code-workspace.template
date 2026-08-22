@@ -4,8 +4,8 @@
     { "name": "<WORKSPACE_SLUG>", "path": "." },
     { "name": "<REPO_1_NAME>", "path": "<REPO_1_PATH>" },
     { "name": "<REPO_2_NAME>", "path": "<REPO_2_PATH>" }
-    // e.g. { "name": "ios-app", "path": "ios-app" }, { "name": "orders-api", "path": "services/orders-api" }
   ],
+  "_example_folders": "e.g. { name: ios-app, path: ios-app }, { name: orders-api, path: services/orders-api } — VS Code ignores unknown keys; delete this line when done",
   "settings": {
     "chat.subagents.allowInvocationsFromSubagents": true,
     "chat.useAgentsMdFile": true

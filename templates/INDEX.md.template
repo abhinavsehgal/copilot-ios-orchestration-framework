@@ -19,14 +19,14 @@
 
 | Task type | docs/ai-context/ | .github/instructions/ that may apply | Specialist (optional) |
 |---|---|---|---|
-| SwiftUI / UIKit views, layout, accessibility | `swiftui-patterns.md` | `swiftui.instructions.md`, `concurrency.instructions.md` | `<PROJECT_SLUG>-ios-ui` |
-| CoreData / SwiftData / Realm / persistence | `coredata-schema.md` | `coredata.instructions.md`, `concurrency.instructions.md` | `<PROJECT_SLUG>-ios-data` |
-| URLSession / Combine / API networking | `networking-architecture.md` | `networking.instructions.md`, `concurrency.instructions.md` | `<PROJECT_SLUG>-ios-network` |
-| Tests (XCTest / XCUITest / snapshots) | `testing-strategy.md` | (your tests instruction file if present) | `<PROJECT_SLUG>-ios-tests` |
-| Fastlane / TestFlight / App Store | `release-process.md` | `code-signing.instructions.md` | `<PROJECT_SLUG>-ios-release` |
-| Info.plist / entitlements / ATT / nutrition labels | `info-plist-policy.md` | `info-plist.instructions.md` | `<PROJECT_SLUG>-ios-privacy` (REVIEW-ONLY) |
-| Performance / Instruments / Crashlytics | `performance-baseline.md` | `concurrency.instructions.md` | `<PROJECT_SLUG>-ios-perf` |
-| Background tasks / silent push / lifecycle | `background-tasks.md` | `info-plist.instructions.md` (BG identifiers) | `<PROJECT_SLUG>-ios-bg` |
+| SwiftUI / UIKit views, layout, accessibility | `swiftui-patterns.md` | `swiftui.instructions.md`, `concurrency.instructions.md` | `ios-ui` |
+| CoreData / SwiftData / Realm / persistence | `coredata-schema.md` | `coredata.instructions.md`, `concurrency.instructions.md` | `ios-data` |
+| URLSession / Combine / API networking | `networking-architecture.md` | `networking.instructions.md`, `concurrency.instructions.md` | `ios-network` |
+| Tests (XCTest / XCUITest / snapshots) | `testing-strategy.md` | (your tests instruction file if present) | `ios-tests` |
+| Fastlane or Xcode Cloud / TestFlight / App Store | `release-process.md` | `code-signing.instructions.md` | `ios-release` |
+| Info.plist / entitlements / ATT / nutrition labels | `info-plist-policy.md` | `info-plist.instructions.md` | `ios-privacy` (REVIEW-ONLY) |
+| Performance / Instruments / Crashlytics | `performance-baseline.md` | `concurrency.instructions.md` | `ios-perf` |
+| Background tasks / silent push / lifecycle | `background-tasks.md` | `info-plist.instructions.md` (BG identifiers) | `ios-bg` |
 | What is live where / past decisions / vocabulary / deferred work | `PROJECT.md` · `LEARNINGS.md` · `GLOSSARY.md` · `docs/<AREA>_BACKLOG.md` | — | — |
 | Cross-domain feature, multi-step | (this file + `ORCHESTRATION_SPOONFEEDER.md`) | varies | `<PROJECT_SLUG>-orchestrator` |
 | Bidirectional handoff format | `HANDOFF_SCHEMA.md` | n/a | orchestrator (issuer) + specialists (receivers) |
@@ -44,25 +44,25 @@
 
 ### Example 2 — "VoiceOver order is wrong on ProfileView"
 
-1. UI-only → use `@<PROJECT_SLUG>-ios-ui` directly (no orchestrator needed)
+1. UI-only → use `@ios-ui` directly (no orchestrator needed)
 2. Read `swiftui-patterns.md` § Accessibility
 3. `swiftui.instructions.md` auto-loads when editing `Sources/Views/ProfileView.swift`
 
 ### Example 3 — "Add IDFA-using analytics SDK"
 
-1. Privacy-sensitive → orchestrator routes through `<PROJECT_SLUG>-ios-privacy` (REVIEW-ONLY) FIRST for risk audit
-2. Then `<PROJECT_SLUG>-ios-network` for SDK init
-3. Then `<PROJECT_SLUG>-ios-release` for ATT prompt + nutrition label update
+1. Privacy-sensitive → orchestrator routes through `ios-privacy` (REVIEW-ONLY) FIRST for risk audit
+2. Then `ios-network` for SDK init
+3. Then `ios-release` for ATT prompt + nutrition label update
 
 ### Example 4 — "TestFlight build failed code signing"
 
-1. Release-only → `@<PROJECT_SLUG>-ios-release`
+1. Release-only → `@ios-release`
 2. Read `release-process.md`, `code-signing.instructions.md` auto-loads
 3. Likely cause: provisioning profile expired or Match cache invalid
 
 ### Example 5 — "Crashlytics top issue this week"
 
-1. Triage → `@<PROJECT_SLUG>-ios-perf`
+1. Triage → `@ios-perf`
 2. Read `performance-baseline.md`
 3. Perf specialist identifies hotspot, hands off fix to relevant specialist (likely `ios-ui` or `ios-data`)
 
@@ -74,7 +74,7 @@
 - `docs/BUILD_SYSTEM.md` — schemes, configs, signing strategy
 - `docs/PRIVACY_AND_DATA.md` — data inventory, retention, App Privacy nutrition labels
 - `docs/DEPENDENCIES.md` — Pods/SPM list, audit dates, owners
-- `docs/RELEASE_PROCESS.md` — Fastlane lanes, ASC API key rotation
+- `docs/RELEASE_PROCESS.md` — Fastlane lanes / Xcode Cloud workflows, ASC API key rotation
 
 ## How to use this system
 

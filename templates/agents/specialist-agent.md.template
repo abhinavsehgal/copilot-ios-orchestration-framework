@@ -3,7 +3,7 @@
 # No `agents:` field on a specialist — it returns `recommended_next_agent` to the orchestrator instead of invoking other agents (Chapter 3).
 name: <SPECIALIST_NAME>
 description: <DOMAIN> specialist for <PROJECT_NAME>. Owns <SCOPE_SUMMARY>. Auto-loads <RELEVANT_INSTRUCTION_FILE>.
-tools: Read, Edit, MultiEdit, Bash, Grep, Glob, mcp__github__*
+tools: read, edit, bash, grep, glob, github/*
 target: vscode, github-copilot
 disable-model-invocation: false
 user-invocable: true
@@ -65,12 +65,12 @@ You do NOT own:
 A good specialist agent:
 - Has a tight scope (3-5 owned areas, not 10)
 - Has explicit handoff targets for adjacent concerns (don't drift into other specialists' scopes)
-- Has a `tools:` allowlist that's the minimum sufficient set (no `Bash` if pure file work; no `mcp__sentry__*` if not doing crash triage)
+- Has a `tools:` allowlist that's the minimum sufficient set (no `bash` if pure file work; no `sentry/*` if not doing crash triage)
 - Has a Definition of Done with concrete verifiable artifacts
 - Cites at most 2 cross-links — agents drown in cross-links
 
 A bad specialist agent:
 - Overlaps another specialist's scope (causes orchestrator confusion)
-- Has `tools: Read, Edit, MultiEdit, Bash, Grep, Glob, mcp__*__*` (too permissive — defeats the purpose)
+- Has `tools: read, edit, bash, grep, glob` plus every MCP server's `*` (too permissive — defeats the purpose)
 - Has aspirational rules ("we should always...") instead of enforced ones
 - Has no auto-loaded instruction file (leaves rules implicit)

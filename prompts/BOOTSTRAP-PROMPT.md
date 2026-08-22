@@ -8,7 +8,7 @@ You are running the bootstrap pass for the [Copilot iOS Orchestration Framework]
 
 ### Pre-flight 1 — Auto-snapshot
 
-If `.github/` exists with any framework-managed files (any of: `copilot-instructions.md`, `instructions/`, `prompts/`, `agents/`, `chatmodes/`):
+If `.github/` exists with any framework-managed files (any of: `copilot-instructions.md`, `instructions/`, `prompts/`, `agents/`, `skills/`, `hooks/`, `chatmodes/`):
 
 ```bash
 mkdir -p .github-pre-bootstrap-backup
@@ -17,6 +17,8 @@ cp -r .github/instructions .github-pre-bootstrap-backup/ 2>/dev/null
 cp -r .github/prompts .github-pre-bootstrap-backup/ 2>/dev/null
 cp -r .github/agents .github-pre-bootstrap-backup/ 2>/dev/null
 cp -r .github/chatmodes .github-pre-bootstrap-backup/ 2>/dev/null
+cp -r .github/skills .github-pre-bootstrap-backup/ 2>/dev/null
+cp -r .github/hooks .github-pre-bootstrap-backup/ 2>/dev/null
 ```
 
 Add `.github-pre-bootstrap-backup/` to `.gitignore` if not already present.
@@ -45,7 +47,7 @@ For each proposed instruction file's `applyTo:`, check if any existing `.github/
 If existing `.github/copilot-instructions.md` is present:
 - Read it fully
 - Identify "router-shaped" content vs "orchestrator-persona-shaped" content
-- If the existing file has orchestrator-persona content (delegation instructions, agent personalities, multi-step workflows): STOP with `<NEEDS USER CONFIRMATION>` — the framework will move that to `.github/agents/<your-app>-orchestrator.md` and slim the router; user must approve
+- If the existing file has orchestrator-persona content (delegation instructions, agent personalities, multi-step workflows): STOP with `<NEEDS USER CONFIRMATION>` — the framework will move that to `.github/agents/<your-app>-orchestrator.agent.md` and slim the router; user must approve
 
 ### Pre-flight 5 — Existing agent / chatmode style detection
 
@@ -72,12 +74,13 @@ For each file in the approved list (from Phase A's decision gate):
 2. **Substitute placeholders** with values from INVENTORY answers:
    - `<PROJECT_NAME>` → user's confirmed project name
    - `<PROJECT_SLUG>` → kebab-case slug
-   - `<DEFAULT_BASE_BRANCH>` → user's confirmed branch (default `develop`)
-   - `<BUILD_COMMAND>` → user's confirmed build command (default `xcodebuild -workspace MyApp.xcworkspace -scheme MyApp build`)
+   - `<DEFAULT_BASE_BRANCH>` → user's confirmed branch (INVENTORY Q2); `<PROD_BRANCH>` / `<STAGING_BRANCH>` / `<PROTECTED_BRANCH>` (PROJECT.md, hooks) → the production and integration branches from the same answer
+   - `<BUILD_COMMAND>` → user's confirmed build command (default `xcodebuild -workspace <WORKSPACE>.xcworkspace -scheme <SCHEME> -destination 'generic/platform=iOS Simulator' build`; a project-only repo uses `-project <PROJECT>.xcodeproj`)
    - `<TEST_COMMAND>` → user's confirmed test command
    - `<IOS_DEPLOYMENT_TARGET>` → user's confirmed iOS minimum (e.g. `15.0`)
-   - `<XCODE_WORKSPACE>` → workspace filename
+   - `<XCODE_WORKSPACE>` → workspace filename (the v1.0 templates carry the full `.xcworkspace` name); `<WORKSPACE>` / `<SCHEME>` / `<PROJECT>` (the v1.1 hooks, skills and `PROJECT.md` §7) → the same values without the suffix — the template supplies `.xcworkspace` / `.xcodeproj`
    - `<XCODE_SCHEME>` → primary scheme
+   - `<BUNDLE_ID>`, `<CHANGELOG_PATH>`, `<STATE_DOC_PATH>` (= `docs/ai-context/PROJECT.md`), `<REMOTE>` / `<BASE_BRANCH>` / `<COMMIT_SHA>` (the PROJECT.md freshness header), `<REPO_NAME_FRAGMENT>` (hooks) → read from the repo, never guessed
    - `<PROJECT_TRAILER>` → team's standard commit trailer
    - `<APPLY_TO_GLOB_*>` → globs proposed in INVENTORY (with user's confirmed adjustments)
 3. **Show preview** — display the final file content (first 50 lines + length) before writing
@@ -104,9 +107,9 @@ For each file in the approved list (from Phase A's decision gate):
 
 ### Step 13 — Create the project-truth set (v1.1.0)
 
-These files are what a FRESH agent with no transcript reads first (`docs/12-PROJECT-TRUTH-AND-LEARNINGS.md`). Generate them from the codebase with the same evidence discipline as the instruction files — every state claim date-stamped, every command copied from the real scheme / Fastfile / CI config, never guessed:
+These files are what a FRESH agent with no transcript reads first (`docs/12-PROJECT-TRUTH-AND-LEARNINGS.md`). Generate them from the codebase with the same evidence discipline as the instruction files — every state claim date-stamped, every command copied from the real scheme / Fastfile / Xcode Cloud `ci_scripts` / CI config, never guessed:
 
-- `docs/ai-context/PROJECT.md` from `<framework path>/templates/PROJECT.md.template`. Fill §2 (branches → App Store / TestFlight / internal builds, and **what the pipeline does NOT do** — provisioning-profile rotation, App Store Connect metadata, TestFlight promotion, backend migrations the app depends on), §3 (what is live where — App Store version/build, latest TestFlight, backend per environment; if you cannot verify one, write `unknown`, never a guess), §6 (sources of truth: the canonical helper per concept, found by grep), §7 (commands, verified against the scheme list and the Fastfile).
+- `docs/ai-context/PROJECT.md` from `<framework path>/templates/PROJECT.md.template`. Fill §2 (branches → App Store / TestFlight / internal builds, and **what the pipeline does NOT do** — provisioning-profile rotation, App Store Connect metadata, TestFlight promotion, backend migrations the app depends on), §3 (what is live where — App Store version/build, latest TestFlight, backend per environment; if you cannot verify one, write `unknown`, never a guess), §6 (sources of truth: the canonical helper per concept, found by grep), §7 (commands, verified against the scheme list and the Fastfile / CI config).
 - `docs/ai-context/LEARNINGS.md` from `<framework path>/templates/LEARNINGS.md.template`. On a brownfield repo, seed §A/§B from the git log, App Review rejection notes and any post-mortems or ADRs; seed §D with the generic corrections already in the template; leave §E for the owner to fill.
 - `docs/ai-context/GLOSSARY.md` from `<framework path>/templates/GLOSSARY.md.template` — list every domain concept you found called by more than one name (model field vs API field vs screen label), with the file:field evidence.
 - `.github/skills/<project-slug>-engineering/SKILL.md` from `<framework path>/templates/engineering-playbook-skill.md.template` — an Agent Skill (frontmatter `name` + `description`), so it loads on the cloud agent and the CLI as well as in the IDE. The directory name must equal the `name:` field.

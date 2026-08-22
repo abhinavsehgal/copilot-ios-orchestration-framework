@@ -11,7 +11,7 @@ The eight default iOS specialist agents shipped in this framework, what each one
 ├── ios-data.agent.md                ← CoreData / SwiftData / Realm / file storage
 ├── ios-network.agent.md             ← URLSession / async-await / Combine / cert pinning
 ├── ios-tests.agent.md               ← XCTest / XCUITest / snapshot tests
-├── ios-release.agent.md             ← Fastlane / TestFlight / App Store Connect
+├── ios-release.agent.md             ← Fastlane or Xcode Cloud / TestFlight / App Store Connect
 ├── ios-privacy.agent.md             ← REVIEW-ONLY: Info.plist / ATT / nutrition labels
 ├── ios-perf.agent.md                ← Instruments / hangs / memory / launch time
 └── ios-bg.agent.md                  ← BGTaskScheduler / silent push / lifecycle
@@ -25,7 +25,7 @@ Eight specialists is a lot for a small app. **Drop the ones you don't need.** A 
 
 ### `<your-app>-orchestrator`
 
-The coordinator. Has NO Edit/Write tools — it can only Read, Grep, Glob, Bash. Its job is to receive the user's task, decompose it into specialist handoffs, validate each return, and aggregate results.
+The coordinator. Has NO `edit` tool — it can only `read`, `search`, `grep`, `glob` and run read-only shell commands (`bash`). Its job is to receive the user's task, decompose it into specialist handoffs, validate each return, and aggregate results.
 
 | Owns | Doesn't own |
 |---|---|
@@ -36,12 +36,14 @@ The coordinator. Has NO Edit/Write tools — it can only Read, Grep, Glob, Bash.
 
 **Frontmatter:**
 ```yaml
-tools: Read, Grep, Glob, Bash, mcp__github__*
+tools: read, search, grep, glob, bash, github/*
 agents: [ios-ui, ios-data, ios-network, ios-tests, ios-release, ios-privacy, ios-perf, ios-bg]   # VS Code subagent allowlist; ignored by the cloud agent
 target: vscode, github-copilot
 disable-model-invocation: true        # only invoked explicitly
 user-invocable: true
 ```
+
+⚠ **Verify your surface's exact tool names.** `read`, `edit`, `search`, `execute` (aliases `bash`, `grep`, `glob`) and `<mcp-server>/*` are the identifiers on the GitHub custom-agents reference (verified 2026-08-22) and what the cloud agent and the CLI recognise; VS Code uses its own identifiers (`search/codebase`, `edit`, `runCommands`, …) and **ignores an unknown name** rather than rejecting it — so a Claude Code tool name in `tools:` enforces nothing. Check the agent-configuration UI in your IDE.
 
 `agents:` is the list of agents the orchestrator may invoke as **subagents** in VS Code (`runSubagent`; `*` = all — never on an orchestrator). The cloud agent ignores the field, so keep the same roster in the body's routing table. Specialists carry no `agents:`: by framework convention a specialist still returns `recommended_next_agent` to the orchestrator rather than chaining into another specialist — a choice for auditability now that nesting is possible, not a platform limit.
 
@@ -93,11 +95,11 @@ XCTest unit tests, XCUITest UI tests, snapshot tests (e.g. SnapshotTesting libra
 
 ### `ios-release`
 
-Fastlane lanes, TestFlight builds, App Store Connect API, code signing automation, version + build number bumping, archive + IPA upload, App Store screenshots/metadata.
+Fastlane lanes or Xcode Cloud workflows (or whatever CI cuts the build), TestFlight builds, App Store Connect API, code signing automation, version + build number bumping, archive + IPA upload, App Store screenshots/metadata.
 
 | Owns | Doesn't own |
 |---|---|
-| Fastfile + lane logic | Crash post-release triage (handoff to `ios-perf`) |
+| Fastfile + lane logic / Xcode Cloud workflow + `ci_scripts/` | Crash post-release triage (handoff to `ios-perf`) |
 | Build number bumping policy | Privacy nutrition labels (handoff to `ios-privacy`) |
 | TestFlight + App Store submission | Release notes copy (collaborates with product/marketing) |
 | Provisioning profile rotation | Code signing certificate generation (locked: per-team manual process) |
@@ -106,7 +108,7 @@ Fastlane lanes, TestFlight builds, App Store Connect API, code signing automatio
 
 `Info.plist` usage descriptions, App Tracking Transparency, privacy nutrition labels, App Store Required Reasons API declarations, COPPA / GDPR / DPDP compliance, third-party SDK privacy manifests.
 
-**REVIEW-ONLY = `tools: Read, Grep, Glob` (no Edit/Write).** This is a runtime lock — Copilot's harness physically blocks file edits from this agent. The agent reads, finds risks, files findings; humans (or implementation specialists) make the changes.
+**REVIEW-ONLY = `tools: read, search, grep, glob` (no `edit`, no shell).** This is a runtime lock — Copilot's harness physically blocks file edits from this agent. The agent reads, finds risks, files findings; humans (or implementation specialists) make the changes.
 
 | Owns | Doesn't own |
 |---|---|

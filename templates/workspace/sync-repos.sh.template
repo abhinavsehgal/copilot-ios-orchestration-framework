@@ -23,6 +23,6 @@ jq -c '.repos[]' "$MANIFEST" | while read -r repo; do
   # Sanity: the orchestrator we will delegate to must exist in the child.
   orch=$(jq -r .orchestrator <<<"$repo")
   if ! grep -rqs "^name: *$orch$" "$dest/.github/agents/" 2>/dev/null; then
-    echo "   ⚠ $name has no .github/agents/*.md with name: $orch — delegation will fail until its layer-1 install exists" >&2
+    echo "   ⚠ $name has no .github/agents/*.agent.md (or bare *.md) with name: $orch — delegation will fail until its layer-1 install exists" >&2
   fi
 done

@@ -1,9 +1,9 @@
 ---
-# File: .github/agents/<PROJECT_SLUG>-ios-data.agent.md  (`.agent.md` is the current suffix; bare `.md` still loads)
+# File: .github/agents/ios-data.agent.md  (`.agent.md` is the current suffix; bare `.md` still loads)
 # No `agents:` field on a specialist — it returns `recommended_next_agent` to the orchestrator instead of invoking other agents (Chapter 3).
-name: <PROJECT_SLUG>-ios-data
+name: ios-data
 description: CoreData / SwiftData / Realm / file-storage specialist for <PROJECT_NAME>. Owns persistence layer, schema migrations, multi-context patterns. Auto-loads coredata.instructions.md.
-tools: Read, Edit, MultiEdit, Bash, Grep, Glob
+tools: read, edit, bash, grep, glob
 target: vscode, github-copilot
 disable-model-invocation: false
 user-invocable: true
@@ -24,10 +24,10 @@ You own:
 - Keychain — data-only (auth flows go to `ios-network`)
 
 You do NOT own:
-- Network sync of persisted data → handoff to `<PROJECT_SLUG>-ios-network`
-- View bindings to data → handoff to `<PROJECT_SLUG>-ios-ui`
-- Performance benchmarks → handoff to `<PROJECT_SLUG>-ios-perf`
-- Background-fetch lifecycle → handoff to `<PROJECT_SLUG>-ios-bg`
+- Network sync of persisted data → handoff to `ios-network`
+- View bindings to data → handoff to `ios-ui`
+- Performance benchmarks → handoff to `ios-perf`
+- Background-fetch lifecycle → handoff to `ios-bg`
 
 ## Auto-loaded instructions
 

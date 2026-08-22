@@ -23,10 +23,6 @@ applyTo: "Sources/**/Views/**/*.swift,Sources/Views/**/*.swift,*.xib,*.storyboar
 
 ## Hard rules
 
-### 1. Avatars use `<img>` equivalents — never `next/image` ... wait, no, we're on iOS
-
-(Joking — but a real example below.)
-
 ### 1. SwiftUI `@State` must be `private`
 
 **Why:** `@State` is owned by the view; making it non-private breaks SwiftUI's identity invariants and causes silent re-render glitches.
@@ -75,6 +71,9 @@ applyTo: "**/Info.plist,**/*.entitlements,**/*.xcconfig"
 
 # Fastlane
 applyTo: "fastlane/**/*,Fastfile,Appfile,Matchfile"
+
+# Xcode Cloud (the only repo-side artefact is ci_scripts/)
+applyTo: "ci_scripts/**"
 
 # Multi-platform target subset
 applyTo: "Sources/iOS/**/*.swift,Sources/Shared/**/*.swift"

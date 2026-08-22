@@ -60,7 +60,7 @@ Look for:
 - Default branch (`develop` / `main` / something else)
 - Release branches (`release/*`?)
 - `fastlane/Fastfile` lanes
-- CI config (`.github/workflows/*.yml`, `.bitrise.yml`, `.xcode-cloud/`)
+- CI config (`.github/workflows/*.yml`, `.bitrise.yml`, `ci_scripts/` for Xcode Cloud)
 
 ## Step 2 — produce the proposal
 
@@ -125,9 +125,9 @@ Each question with a default if you have evidence to suggest one:
 1. **Project name** — confirm or correct (default: `<your-detected-scheme>`)
 2. **Default base branch** — `develop` / `main` / something else? (default: detected from git)
 3. **iOS deployment target** — confirm (default: from Xcode project)
-4. **Build command** — `xcodebuild` directly or via `fastlane build`? (default: detected)
+4. **Build command** — `xcodebuild` directly (`-workspace` or `-project`), via a Fastlane lane, or via an Xcode Cloud / CI script? (default: detected)
 5. **Test command** — `xcodebuild test` or `fastlane test` or `xcodebuild test -only-testing:...`? (default: detected)
-6. **Signing strategy** — Match / manual / Xcode automatic? (default: detected from Fastlane config if present)
+6. **Signing strategy** — Match / Xcode Cloud managed signing / manual / Xcode automatic? (default: detected from Fastlane or CI config if present)
 7. **MCPs to install at bootstrap** — None (zero MCP setup), Tier 1 only (GitHub + xcodebuild), Tier 1+2 (add Sentry / ASC), or full Tier 1-3? (default: Tier 1 only)
 8. **Specialists you want that aren't in my proposal** — anything missing?
 9. **Specialists in my proposal you want to drop** — anything you don't need?

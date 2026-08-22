@@ -8,7 +8,7 @@ The bidirectional contract between `<PROJECT_SLUG>-orchestrator` and specialists
 handoff:
   version: 1
   from: <PROJECT_SLUG>-orchestrator
-  to: <PROJECT_SLUG>-ios-<specialist>
+  to: ios-<specialist>
   hop: <integer 1-5>
 
   goal: |
@@ -49,7 +49,7 @@ handoff:
 ```yaml
 return:
   version: 1
-  from: <PROJECT_SLUG>-ios-<specialist>
+  from: ios-<specialist>
   to: <PROJECT_SLUG>-orchestrator
   hop: <same as inbound>
   status: completed   # completed | partial | claim_rejected | needs_clarification
@@ -118,6 +118,6 @@ Each claim cites a specific path, schema location, or test name. The orchestrato
 
 ## Cross-links
 
-- `.github/agents/<PROJECT_SLUG>-orchestrator.md` — issuer
-- `.github/agents/<PROJECT_SLUG>-ios-*.md` — receivers
+- `.github/agents/<PROJECT_SLUG>-orchestrator.agent.md` — issuer
+- `.github/agents/ios-*.agent.md` — receivers
 - `docs/ai-context/INDEX.md` — task routing that drives `to:` selection

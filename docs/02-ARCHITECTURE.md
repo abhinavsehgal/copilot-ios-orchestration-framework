@@ -61,7 +61,7 @@ docs/                                          ← Project's own documentation
 ## How Copilot loads each file
 
 ### `.github/copilot-instructions.md` — auto-loaded everywhere
-Loaded into the system prompt of **every** Copilot interaction across every surface (Chat, inline completions in Xcode + VS Code, code review on github.com, Cloud Agent). Keep this file thin (under 200 lines) — it's a router, not a manual.
+Loaded into the system prompt of **every** Copilot interaction across every surface (Chat, inline completions in VS Code — and in Xcode where Copilot for Xcode reads it; not re-verified — code review on github.com, Cloud Agent). Keep this file thin (under 200 lines) — it's a router, not a manual.
 
 What goes here:
 - Project name, what it is in one sentence
@@ -73,7 +73,7 @@ What goes here:
 
 What does NOT go here:
 - Long architectural detail (goes in `docs/ARCHITECTURE.md`)
-- The orchestrator's body prompt (goes in `.github/agents/<your-app>-orchestrator.md`)
+- The orchestrator's body prompt (goes in `.github/agents/<your-app>-orchestrator.agent.md`)
 - iOS-specific gotchas (go in `.github/instructions/<domain>.instructions.md`)
 
 ### `.github/instructions/<domain>.instructions.md` — auto-loaded by `applyTo:` match
@@ -112,7 +112,7 @@ File name `<name>.agent.md` (a bare `.md` still loads; `.agent.md` is the curren
 ---
 name: ios-data
 description: CoreData / SwiftData / Realm / file storage specialist
-tools: Read, Edit, MultiEdit, Bash, Grep, Glob, mcp__xcode__*
+tools: read, edit, bash, grep, glob, xcode/*
 target: vscode, github-copilot
 disable-model-invocation: false
 ---
@@ -120,7 +120,7 @@ disable-model-invocation: false
 
 The orchestrator additionally carries `agents: [ios-ui, ios-data, …]` — in VS Code that list is a real allowlist of which agents it may invoke as subagents (`*` = all; never on an orchestrator); the cloud agent ignores the field and reads the routing table in the body. Specialists carry no `agents:` — they return `recommended_next_agent` rather than chaining (Chapter 3).
 
-The orchestrator agent has tools restricted to `Read, Grep, Glob, Bash` (no Edit/Write — it can only orchestrate, not implement). REVIEW-ONLY agents like `ios-privacy` have only `Read, Grep, Glob`. Implementation specialists like `ios-ui` have full Read+Edit+Bash.
+The orchestrator agent has tools restricted to `read, search, grep, glob, bash` (no `edit` — it can only orchestrate, not implement). REVIEW-ONLY agents like `ios-privacy` have only `read, search, grep, glob` (no shell either — a shell can write). Implementation specialists like `ios-ui` add `edit` and `bash`. These are the tool aliases on the GitHub custom-agents reference (verified 2026-08-22); VS Code recognises its own identifiers (`search/codebase`, `edit`, `runCommands`, …) and silently IGNORES an unknown name, so verify the list in your IDE's agent configuration UI.
 
 ### `.github/chatmodes/<NAME>.chatmode.md` — RETIRED
 Custom chat modes were the earlier name for custom agents and are retired (verified 2026-08-22). Rename any existing file to `.github/agents/<name>.agent.md`; `description`, `tools` and `model` carry over unchanged. Do not create new chat-mode files.

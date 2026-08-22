@@ -25,7 +25,7 @@ description: Run xcodebuild and report success or the failure tail. Used by orch
 
 ```bash
 # What workspace + scheme?
-ls *.xcworkspace 2>/dev/null
+ls *.xcworkspace *.xcodeproj 2>/dev/null   # project-only repo: xcodebuild -project <PROJECT>.xcodeproj -list
 xcodebuild -workspace <XCODE_WORKSPACE> -list 2>/dev/null | head -20
 ```
 
@@ -77,7 +77,7 @@ If failure is in a file outside the current branch's diff (i.e. pre-existing bre
 
 - **NEVER** run `xcodebuild archive` from this prompt — too slow, requires signing material
 - **NEVER** modify any file as part of "fixing" the build — this prompt is verification only; if it fails, report and let the user (or orchestrator) decide what to do
-- **NEVER** run with `-quiet` flag in CI — we need the failure detail; for local dev, `--silent` is fine
+- **NEVER** run with `-quiet` flag in CI — we need the failure detail; for local dev, `-quiet` is fine
 
 ## Definition of Done
 

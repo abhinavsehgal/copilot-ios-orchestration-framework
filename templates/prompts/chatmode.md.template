@@ -41,4 +41,4 @@ Chat modes vs agents:
 - Use **chat mode** for: ad-hoc personas, exploratory thinking sessions, voice/style overlays
 - Use **agent** for: scoped work with tool restrictions, multi-turn task coordination, anything that should auto-route on `@-mention`
 
-If you're tempted to add tools / scope / routing to a chat mode, you actually want an agent. Make it `.github/agents/<name>.md` instead.
+If you're tempted to add tools / scope / routing to a chat mode, you actually want an agent. Make it `.github/agents/<name>.agent.md` instead.

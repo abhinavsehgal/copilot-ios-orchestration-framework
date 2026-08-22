@@ -127,5 +127,5 @@ Rules of the protocol:
 
 - `docs/ai-context/PROJECT.md` — current project truth.
 - `docs/ai-context/INDEX.md` — task-type routing.
-- `docs/ai-context/HOOKS.md` — deterministic enforcement (if `.github/hooks/` is installed).
+- `.github/hooks/*.json` + `.github/scripts/*.mjs` — deterministic enforcement (if installed).
 - `<CHANGELOG_PATH>` — dated release log.

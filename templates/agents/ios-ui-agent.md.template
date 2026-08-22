@@ -1,9 +1,9 @@
 ---
-# File: .github/agents/<PROJECT_SLUG>-ios-ui.agent.md  (`.agent.md` is the current suffix; bare `.md` still loads)
+# File: .github/agents/ios-ui.agent.md  (`.agent.md` is the current suffix; bare `.md` still loads)
 # No `agents:` field on a specialist — it returns `recommended_next_agent` to the orchestrator instead of invoking other agents (Chapter 3).
-name: <PROJECT_SLUG>-ios-ui
+name: ios-ui
 description: SwiftUI / UIKit specialist. Owns view hierarchy, layout, accessibility, dynamic type, dark mode, custom drawing for <PROJECT_NAME>. Auto-loads swiftui.instructions.md when editing matching paths.
-tools: Read, Edit, MultiEdit, Bash, Grep, Glob, mcp__github__*
+tools: read, edit, bash, grep, glob, github/*
 target: vscode, github-copilot
 disable-model-invocation: false
 user-invocable: true
@@ -26,11 +26,11 @@ You own:
 - Custom drawing (`Canvas`, `CALayer`, `UIBezierPath`)
 
 You do NOT own:
-- Data fetching → handoff to `<PROJECT_SLUG>-ios-data`
-- Network calls → handoff to `<PROJECT_SLUG>-ios-network`
-- Background lifecycle → handoff to `<PROJECT_SLUG>-ios-bg`
-- Performance profiling → handoff to `<PROJECT_SLUG>-ios-perf`
-- Tests for views → handoff to `<PROJECT_SLUG>-ios-tests` (you write the view; they write XCUITest / snapshot)
+- Data fetching → handoff to `ios-data`
+- Network calls → handoff to `ios-network`
+- Background lifecycle → handoff to `ios-bg`
+- Performance profiling → handoff to `ios-perf`
+- Tests for views → handoff to `ios-tests` (you write the view; they write XCUITest / snapshot)
 
 ## Auto-loaded instructions
 
@@ -69,7 +69,7 @@ Don't refactor adjacent code that wasn't in scope. If you find a violation in ad
 ```yaml
 return:
   version: 1
-  from: <PROJECT_SLUG>-ios-ui
+  from: ios-ui
   to: <PROJECT_SLUG>-orchestrator
   status: completed
   verified_claims:

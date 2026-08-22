@@ -42,7 +42,7 @@ applyTo: "**/Info.plist,**/*.entitlements,**/PrivacyInfo.xcprivacy"
 
 **Why:** App Store rejects apps that initialize ad / analytics SDKs that use IDFA before requesting tracking authorization.
 
-**How to apply:** For any framework using IDFA: (1) Add `NSUserTrackingUsageDescription` to Info.plist with concrete rationale, (2) Call `ATTrackingManager.requestTrackingAuthorization` BEFORE the framework's init, (3) Init the framework only on `.authorized` state, (4) Document this sequence in PR description for `<PROJECT_SLUG>-ios-privacy` to verify.
+**How to apply:** For any framework using IDFA: (1) Add `NSUserTrackingUsageDescription` to Info.plist with concrete rationale, (2) Call `ATTrackingManager.requestTrackingAuthorization` BEFORE the framework's init, (3) Init the framework only on `.authorized` state, (4) Document this sequence in PR description for `ios-privacy` to verify.
 
 ### 3. Required Reasons API declarations (iOS 17+)
 
@@ -54,13 +54,13 @@ applyTo: "**/Info.plist,**/*.entitlements,**/PrivacyInfo.xcprivacy"
 
 **Why:** Adding a Pod / SPM dependency that uses Required Reasons APIs without shipping its own `PrivacyInfo.xcprivacy` → App Store rejection on submission.
 
-**How to apply:** Before adding any new dependency, verify its `PrivacyInfo.xcprivacy` exists (check the Pod's repo / SPM source). If absent, surface to `<PROJECT_SLUG>-ios-privacy` for risk assessment.
+**How to apply:** Before adding any new dependency, verify its `PrivacyInfo.xcprivacy` exists (check the Pod's repo / SPM source). If absent, surface to `ios-privacy` for risk assessment.
 
 ### 5. `BGTaskSchedulerPermittedIdentifiers` for every background task
 
 **Why:** Calling `BGTaskScheduler.shared.register(forTaskWithIdentifier: ...)` without the identifier in `Info.plist`'s `BGTaskSchedulerPermittedIdentifiers` array → silently never schedules.
 
-**How to apply:** Every new BG task ID added to code must also be added to Info.plist. Verify in `<PROJECT_SLUG>-ios-bg`'s PR description.
+**How to apply:** Every new BG task ID added to code must also be added to Info.plist. Verify in `ios-bg`'s PR description.
 
 ## What NOT to do
 
@@ -72,5 +72,5 @@ applyTo: "**/Info.plist,**/*.entitlements,**/PrivacyInfo.xcprivacy"
 ## Cross-links
 
 - `docs/ai-context/info-plist-policy.md` — orientation map
-- `.github/agents/<PROJECT_SLUG>-ios-privacy.md` — REVIEW-ONLY auditor
+- `.github/agents/ios-privacy.agent.md` — REVIEW-ONLY auditor
 - App Store Review Guidelines § 5.1 (Privacy)

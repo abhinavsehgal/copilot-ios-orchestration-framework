@@ -72,7 +72,7 @@ Template: `templates/PROJECT.md.template`. The sections that earn their keep:
 2. **Environments, branches, deploy** — and, critically, **what the deploy pipeline does NOT do**.
    On iOS the usual surprises: provisioning-profile rotation, App Store Connect metadata and
    screenshots, and TestFlight build promotion to a wider group or to App Review are **not** done by
-   CI unless a Fastlane lane explicitly does them; a backend migration the app depends on does not
+   CI unless a Fastlane lane or an Xcode Cloud workflow explicitly does them; a backend migration the app depends on does not
    apply itself either. "Migrations don't auto-apply" cost a real outage.
 3. **Current state — what is live where.** A table: feature → App Store / TestFlight / internal
    build / backend environment / flag / date. The environments an iOS app has are the **App Store
@@ -226,7 +226,7 @@ field renamed there fails silently here.
   may. A deliberate divergence is written down with its reason.
 - **Same heading ⇒ same endpoint.** Before building a panel that mirrors another client's panel,
   open that client's component and find what it actually *fetches*. Two cards with the same title
-  and the same chart fed from two different endpoints showed one family two different answers to one
+  and the same chart fed from two different endpoints showed one user two different answers to one
   question. Record the panel → source pairing in the orientation map.
 - **One brain.** Business logic lives server-side; clients render. If a client needs derived data
   another client computes locally, extend the API rather than porting the computation.

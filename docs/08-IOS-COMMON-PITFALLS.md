@@ -21,9 +21,9 @@ The repository-wide instructions file is auto-loaded into EVERY Copilot interact
 
 ### Pitfall 2: REVIEW-ONLY agents with auto-Edit privileges
 
-If you set `tools: Read, Grep, Glob, Edit, Write` on `ios-privacy`, your privacy reviewer can now silently change `Info.plist`. The whole point of REVIEW-ONLY is the runtime lock — Copilot's harness physically blocks Edit if Edit isn't in `tools:`.
+If you set `tools: read, search, grep, glob, edit` on `ios-privacy`, your privacy reviewer can now silently change `Info.plist`. The whole point of REVIEW-ONLY is the runtime lock — Copilot's harness physically blocks Edit if Edit isn't in `tools:`.
 
-**Right answer:** REVIEW-ONLY agents have only `Read, Grep, Glob` (and optionally `Bash` for read-only commands). Never include `Edit`, `Write`, or `MultiEdit`.
+**Right answer:** REVIEW-ONLY agents have only `read`, `search`, `grep`, `glob`. Never include `edit` — and not `bash`/`execute` either, because a shell can write. (Use the tool aliases the Copilot docs list; an unrecognised name such as a Claude Code tool name is silently ignored, not enforced.)
 
 ### Pitfall 3: Treating documentation enforcement as runtime enforcement
 
@@ -373,8 +373,8 @@ second bundle id is introduced.
 
 ### Pitfall 34: iOS grants exactly ONE notification-permission prompt per install
 
-`requestAuthorization` shows the system dialog once. After a denial (or when
-`canAskAgain`-equivalents are false) it resolves instantly with the same answer and shows nothing
+`requestAuthorization` shows the system dialog once. After a denial (`authorizationStatus ==
+.denied`) it resolves instantly with the same answer and shows nothing
 — a dead button. A prompt spent behind a rarely visited screen, or behind a registration call that
 could not succeed, is a prompt lost for the life of the install.
 
@@ -385,7 +385,7 @@ permission / registration module.
 
 ### Pitfall 35: A `WKWebView` cannot see a single-page app's route changes through its navigation delegate
 
-`WKNavigationDelegate` (and React Native's `onNavigationStateChange`) fires on document **loads**.
+`WKNavigationDelegate` fires on document **loads**.
 A client-side router navigates with `history.pushState` and re-renders — no load, no callback. A
 native wrapper that watches for "the web page navigated away" is correct code waiting for an event
 that never comes; the user ends up on an unintended web page wearing the app's chrome.
@@ -413,14 +413,15 @@ build. Rule for the authentication module and the privacy review checklist.
 
 ### Pitfall 37: `NSURLSession` keeps a cookie jar you did not choose — and `NSURLCache` masks sign-out
 
-Native `fetch`/`URLSession` stores `Set-Cookie` from every response and silently attaches those
+`URLSession` (and every HTTP client built on it) stores `Set-Cookie` from every response and silently attaches those
 cookies to later requests to the same host. An app that authenticates with a bearer token can
 therefore succeed *because of a cookie* left by a different role's earlier session — serving the
 wrong person's data while every log says the token path works. `NSURLCache` compounds it: a
 cached 200 keeps "working" after sign-out, hiding a real 401 for days.
 
-**Right answer:** treat the cookie jar as a third credential. Send `cache` = no-store on
-authenticated calls, clear cookies on sign-out, and when a request "works" do not conclude the
+**Right answer:** treat the cookie jar as a third credential. Use
+`cachePolicy = .reloadIgnoringLocalCacheData` (or a session with no `URLCache`) on authenticated
+calls, clear `HTTPCookieStorage` on sign-out, and when a request "works" do not conclude the
 intended credential worked until you have reproduced it with a bare `curl` and only that
 credential. Rule for the networking layer.
 
@@ -438,21 +439,23 @@ can race a legitimate exit. Rule for any screen that changes orientation.
 
 ### Pitfall 39: A "last notification response" API returns the same tap forever
 
-APIs that answer "what was the last notification the user tapped" keep answering it. An effect
-that reads it and navigates, re-run on every render or token refresh, replays the morning's tap
-and tears out whatever screen the user just opened — with no error and no fingerprint in any
-screen-level code, because the killer is in the root layout above every screen.
+APIs that answer "what was the last notification the user tapped" (a cached launch option, a
+stored `UNNotificationResponse`, a third-party wrapper's "last response" getter) keep answering it.
+A handler that reads it and navigates, re-run on every scene activation, view update or session
+refresh, replays the morning's tap and tears out whatever screen the user just opened — with no
+error and no fingerprint in any screen-level code, because the cause sits in the app / scene
+delegate above every screen.
 
-**Right answer:** consume the cold-start response exactly once per process (module flag), then
-clear it; never put a render-fresh object in the dependencies of an effect that can navigate. Rule
-for the root layout / notification-handling module.
+**Right answer:** consume the cold-start response exactly once per process (a module-level flag),
+then clear it; never let a handler that can navigate re-run on every view update or state change.
+Rule for the app / scene delegate and the notification-handling module.
 
 ### Pitfall 40: A build flavour changes the bundle id and the environment — not the source branch
 
 A "QA build" that points at staging with a second bundle id is still compiled from whatever
 branch is checked out. A tester on a QA build can be testing last week's code against today's
-server, and a string search of the compiled bundle will not prove otherwise (compiled JS bundles
-store non-ASCII strings in UTF-16, invisible to `strings`).
+server, and a string search of the compiled binary will not prove otherwise (`strings` misses
+non-ASCII and encoded literals, so a zero match proves nothing).
 
 **Right answer:** stamp the git SHA into the build (`Info.plist` or an about screen) and read it
 from the device before believing what a build contains. Rule for the release / CI configuration.

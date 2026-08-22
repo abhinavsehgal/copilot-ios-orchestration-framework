@@ -73,7 +73,7 @@ reminder goes on **stdout as JSON** (Claude: stderr as text), and `preToolUse` i
 
 Templates for all of these ship at `templates/hooks/` (Copilot JSON contract, iOS pre-fills) and
 `templates/skills/` (xcodebuild pre-fills). Each script keeps `<UPPERCASE>` placeholders for the
-workspace, scheme, changelog path and protected branch.
+workspace, scheme, changelog path, protected branch and (Rule 12) the repository name fragment.
 
 ### Why the flag-file design instead of parsing the transcript
 

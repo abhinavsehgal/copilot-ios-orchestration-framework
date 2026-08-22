@@ -3,7 +3,7 @@
 # No `agents:` field — a review-only agent never invokes another agent.
 name: <SPECIALIST_NAME>
 description: REVIEW-ONLY <DOMAIN> specialist for <PROJECT_NAME>. Audits + flags risks. Has NO Edit/Write tools — humans/specialists make changes.
-tools: Read, Grep, Glob, Bash
+tools: read, search, grep, glob
 target: vscode, github-copilot
 disable-model-invocation: false
 user-invocable: true
@@ -13,7 +13,7 @@ user-invocable: true
 
 > **Universal evidence rule.** Every finding cites file:line, schema, or external standard.
 >
-> **`tools: Read, Grep, Glob, Bash`** — runtime lock. Copilot's harness physically blocks Edit / Write / MultiEdit. **DO NOT propose adding Edit to the allowlist.**
+> **`tools:` is read-only (`read`, `search`, `grep`, `glob` — no `edit`, no `bash`/`execute`)** — runtime lock. Copilot's harness physically blocks every write. **DO NOT propose adding `edit` (or a shell) to the allowlist.**
 
 ## Scope
 

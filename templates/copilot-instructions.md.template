@@ -22,7 +22,7 @@ If a claim cannot be tied to a `file:line`, `Info.plist:key`, schema, App Store 
 8. **Multi-agent handoffs are bidirectional and structured.** Orchestrator → specialist uses `handoff:` YAML. Specialist → orchestrator uses `return:` YAML. See `docs/ai-context/HANDOFF_SCHEMA.md`. **No evidence, no claim.**
 9. **Corrections harden into instruction files.** If the owner corrected a *recurring* pattern this turn, end the turn by drafting a one-line patch to the right `.github/instructions/<domain>.instructions.md` and ask for approval. Never say "I'll remember" — any memory the IDE or CLI keeps is machine-local and invisible to every other agent and teammate.
 10. **Deferred work must be written, not spoken.** Any "later" / follow-up / known gap named in a summary is appended to `docs/<AREA>_BACKLOG.md` (what / why / effort / revisit-when) before the turn ends.
-11. **Every production push freshens the docs — same turn, no exceptions.** A push to `main`, an App Store submission or an external-TestFlight promotion updates `<CHANGELOG_PATH>` (the anchor), the affected orientation map(s), the affected instruction files, and `docs/ai-context/PROJECT.md` §3 if what is live on the App Store / TestFlight changed. (Enforced by the `agentStop` doc-freshness hook if `.github/hooks/` is installed — see `docs/ai-context/HOOKS.md`.)
+11. **Every production push freshens the docs — same turn, no exceptions.** A push to `main`, an App Store submission or an external-TestFlight promotion updates `<CHANGELOG_PATH>` (the anchor), the affected orientation map(s), the affected instruction files, and `docs/ai-context/PROJECT.md` §3 if what is live on the App Store / TestFlight changed. (Enforced by the `agentStop` doc-freshness hook if `.github/hooks/` is installed — see `.github/hooks/*.json` and the framework's `docs/10-MECHANICAL-ENFORCEMENT.md`.)
 12. **One name per concept.** `docs/ai-context/GLOSSARY.md` is a rule file; adding a new name for an existing concept is a defect.
 
 ## Mandatory workflow (every non-trivial task)
@@ -42,14 +42,14 @@ If a claim cannot be tied to a `file:line`, `Info.plist:key`, schema, App Store 
 
 | Task touches… | Read first | Specialist (optional) |
 |---|---|---|
-| SwiftUI / UIKit views, layout, accessibility | `docs/ai-context/swiftui-patterns.md` | `@<PROJECT_SLUG>-ios-ui` |
-| CoreData / SwiftData / Realm / file storage | `docs/ai-context/coredata-schema.md` | `@<PROJECT_SLUG>-ios-data` |
-| URLSession / async-await / Combine networking | `docs/ai-context/networking-architecture.md` | `@<PROJECT_SLUG>-ios-network` |
-| Tests (unit / UI / snapshot) | `docs/ai-context/testing-strategy.md` | `@<PROJECT_SLUG>-ios-tests` |
-| Fastlane / TestFlight / App Store Connect / release | `docs/ai-context/release-process.md` | `@<PROJECT_SLUG>-ios-release` |
-| Info.plist / entitlements / ATT / nutrition labels | `docs/ai-context/info-plist-policy.md` | `@<PROJECT_SLUG>-ios-privacy` (REVIEW-ONLY) |
-| Performance / Instruments / Crashlytics triage | `docs/ai-context/performance-baseline.md` | `@<PROJECT_SLUG>-ios-perf` |
-| Background tasks / silent push / lifecycle | `docs/ai-context/background-tasks.md` | `@<PROJECT_SLUG>-ios-bg` |
+| SwiftUI / UIKit views, layout, accessibility | `docs/ai-context/swiftui-patterns.md` | `@ios-ui` |
+| CoreData / SwiftData / Realm / file storage | `docs/ai-context/coredata-schema.md` | `@ios-data` |
+| URLSession / async-await / Combine networking | `docs/ai-context/networking-architecture.md` | `@ios-network` |
+| Tests (unit / UI / snapshot) | `docs/ai-context/testing-strategy.md` | `@ios-tests` |
+| Fastlane or Xcode Cloud / TestFlight / App Store Connect / release | `docs/ai-context/release-process.md` | `@ios-release` |
+| Info.plist / entitlements / ATT / nutrition labels | `docs/ai-context/info-plist-policy.md` | `@ios-privacy` (REVIEW-ONLY) |
+| Performance / Instruments / Crashlytics triage | `docs/ai-context/performance-baseline.md` | `@ios-perf` |
+| Background tasks / silent push / lifecycle | `docs/ai-context/background-tasks.md` | `@ios-bg` |
 | Cross-domain feature, multi-step | `docs/ai-context/INDEX.md` + `docs/ai-context/ORCHESTRATION_SPOONFEEDER.md` | `@<PROJECT_SLUG>-orchestrator` |
 | What is live where / past decisions / vocabulary | `docs/ai-context/PROJECT.md` · `docs/ai-context/LEARNINGS.md` · `docs/ai-context/GLOSSARY.md` | — |
 | The app + its API repo(s) in one change | the workspace repo (`docs/13-MULTI-REPO-WORKSPACES.md` in the framework) | `<WORKSPACE_SLUG>-orchestrator` (if a workspace exists) |
@@ -58,8 +58,8 @@ If a claim cannot be tied to a `file:line`, `Info.plist:key`, schema, App Store 
 
 | Branch | Purpose | Where it goes |
 |---|---|---|
-| `<DEFAULT_BASE_BRANCH>` | Daily integration | TestFlight via Fastlane (`fastlane beta`) |
-| `main` | Production releases | App Store via Fastlane (`fastlane release`) |
+| `<DEFAULT_BASE_BRANCH>` | Daily integration | TestFlight — e.g. `fastlane beta` or an Xcode Cloud workflow |
+| `main` | Production releases | App Store — e.g. `fastlane release` or an Xcode Cloud workflow |
 | `feature/*` | Per-task feature branches | merge → `<DEFAULT_BASE_BRANCH>` |
 | `release/*` | Release candidates | merge → `main`, then tag |
 | `hotfix/*` | Production hotfixes | merge → `main` AND `<DEFAULT_BASE_BRANCH>` |
@@ -98,7 +98,7 @@ open <XCODE_WORKSPACE>
 - `docs/BUILD_SYSTEM.md` — schemes, configurations, xcconfig overlays, signing strategy
 - `docs/PRIVACY_AND_DATA.md` — data inventory, retention, App Privacy nutrition labels
 - `docs/DEPENDENCIES.md` — Pods / SPM, audit dates, owners
-- `docs/RELEASE_PROCESS.md` — Fastlane lanes, App Store Connect API key rotation, ASO
+- `docs/RELEASE_PROCESS.md` — Fastlane lanes / Xcode Cloud workflows, App Store Connect API key rotation, ASO
 
 ## How to use this system
 

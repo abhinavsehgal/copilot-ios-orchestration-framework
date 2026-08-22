@@ -6,17 +6,17 @@ The seven principles this framework rests on. Every doc, prompt, and template im
 
 One coordinator agent (`<your-app>-orchestrator`) reads tasks, classifies them, picks the right specialists (`ios-ui`, `ios-data`, `ios-network`, etc.), and aggregates findings. Specialists do focused work in their own context.
 
-The orchestration is **prescriptive documentation**, not runtime code. The orchestrator is a markdown file at `.github/agents/<your-app>-orchestrator.md` with instructions; Copilot's harness provides the agent dropdown, tool restrictions, and target scoping. There is no orchestration service, no message queue, no central process.
+The orchestration is **prescriptive documentation**, not runtime code. The orchestrator is a markdown file at `.github/agents/<your-app>-orchestrator.agent.md` with instructions; Copilot's harness provides the agent dropdown, tool restrictions, and target scoping. There is no orchestration service, no message queue, no central process.
 
 This matters because:
-- It works in every Copilot surface (VS Code, Xcode, JetBrains, Visual Studio, GitHub.com Chat, Cloud Agent)
+- It works in every Copilot surface that loads custom agents (VS Code, JetBrains, the Copilot CLI, GitHub.com Chat, Cloud Agent; Visual Studio per the surface matrix in Chapter 6). Copilot for Xcode is used for inline completions and building — custom-agent support there is **not verified**
 - It's fully transparent — you can read every rule
 - It's reversible — delete `.github/` and you're back to default Copilot
 - Hard runtime enforcement (where it exists in Copilot — `tools:` allowlists, `target:` scopes, and since v1.1 the `.github/hooks/*.json` lifecycle hooks of Chapter 10) layers on top
 
 ## 2. Each specialist runs with focused tool scope
 
-Every specialist agent declares a `tools:` allowlist in its frontmatter — and Copilot's harness enforces it. A `legal-compliance` or `ios-privacy` specialist that lists only `Read, Grep, Glob` **physically cannot** edit files. The Edit tool isn't in its allowlist, so the harness blocks the call.
+Every specialist agent declares a `tools:` allowlist in its frontmatter — and Copilot's harness enforces it. A `legal-compliance` or `ios-privacy` specialist that lists only `read, search, grep, glob` **physically cannot** edit files. The `edit` tool isn't in its allowlist, so the harness blocks the call.
 
 This is the **single most important runtime defense** the framework provides. A REVIEW-ONLY specialist cannot hallucinate code into your repo because the harness blocks the tool call.
 
@@ -110,6 +110,6 @@ See [`06-INVOCATION-MODES.md`](06-INVOCATION-MODES.md).
 
 ## What these principles get you
 
-A team can work across Xcode, VS Code (with Swift Language Server), JetBrains AppCode (legacy), and on github.com (cloud agent, code review) with consistent behavior. Specialists never inherit baggage from unrelated work. Orchestrator decisions are auditable (every claim cites evidence — file:line, Info.plist key, App Store guideline). Hallucinations don't compound across hops. New iOS engineers see a clean `.github/` layout that tells them where to look — `.github/agents/ios-ui.md` for SwiftUI questions, `.github/instructions/coredata.instructions.md` auto-loads when editing CoreData files, etc.
+A team can work across VS Code (with the Swift extension), the Copilot CLI, and github.com (cloud agent, code review) with consistent behavior — with Xcode as the build, run and profiling tool. Specialists never inherit baggage from unrelated work. Orchestrator decisions are auditable (every claim cites evidence — file:line, Info.plist key, App Store guideline). Hallucinations don't compound across hops. New iOS engineers see a clean `.github/` layout that tells them where to look — `.github/agents/ios-ui.agent.md` for SwiftUI questions, `.github/instructions/coredata.instructions.md` auto-loads when editing CoreData files, etc.
 
 The cost is upfront discipline: you spend a day writing the agent contracts, instruction files, and orientation maps. The payback is permanent — every future task benefits.

@@ -4,9 +4,9 @@ Step-by-step iOS bootstrap. ~2-4 hours total. You can split across multiple sitt
 
 ## Phase 0 — Prerequisites (~10 minutes)
 
-1. **Copilot signed in.** Verify in Xcode (or VS Code with Swift Language Server, or JetBrains AppCode if you still use it).
+1. **Copilot signed in — in VS Code (or the Copilot CLI).** That is where the custom agents, skills and hooks run; Xcode stays the build / run / Instruments tool (custom-agent support in Copilot for Xcode is not verified — see [`06-INVOCATION-MODES.md`](06-INVOCATION-MODES.md)).
 2. **Git clean.** Existing repo state should be clean before bootstrapping (otherwise you can't tell what bootstrap added vs what was already pending).
-3. **Test build passes.** Run `xcodebuild -workspace MyApp.xcworkspace -scheme MyApp build` once before starting. If it fails, fix that first — the framework can't help if the project doesn't compile.
+3. **Test build passes.** Run `xcodebuild -workspace <WORKSPACE>.xcworkspace -scheme <SCHEME> build` (or `-project <PROJECT>.xcodeproj` on a project-only repo) once before starting. If it fails, fix that first — the framework can't help if the project doesn't compile.
 4. **Decide your branching strategy.** Most iOS teams use `develop` for daily, `main` for releases, feature branches off `develop`. Confirm yours and have it ready for the bootstrap prompt.
 5. **(Optional) Check MCP availability.** If you want MCP integrations, see [`11-IOS-MCP-CATALOG.md`](11-IOS-MCP-CATALOG.md). The framework works with zero MCPs; MCPs are amplifiers.
 
@@ -65,12 +65,16 @@ Each file shows you a preview before writing.
 ls -la .github/agents/ .github/instructions/ .github/skills/ docs/ai-context/
 
 # 2. Verify the build still passes (the framework is doc-only; build should be unaffected)
-xcodebuild -workspace MyApp.xcworkspace -scheme MyApp build
+xcodebuild -workspace <WORKSPACE>.xcworkspace -scheme <SCHEME> build   # or -project <PROJECT>.xcodeproj
 
 # 3. Sanity-check the generated content
 cat .github/copilot-instructions.md           # should be thin (under 200 lines)
-cat .github/agents/<your-app>-orchestrator.md # should mention your project name
+cat .github/agents/<your-app>-orchestrator.agent.md # should mention your project name
 cat .github/instructions/swiftui.instructions.md  # should reference your actual paths
+
+# 4. Check the agents load: in VS Code run "Developer: Reload Window", open Copilot Chat and
+#    confirm <your-app>-orchestrator and every specialist appear in the agent dropdown.
+#    Missing one? The file must end in .agent.md, its name: must match, and the YAML must be valid.
 ```
 
 ## Phase 4 — First task end-to-end (30 minutes)
@@ -79,7 +83,7 @@ Open Copilot Chat. Type `@<your-app>-orchestrator`. Pick a real but small task �
 
 Watch the orchestrator:
 1. Issue a `handoff:` block to `ios-tests`
-2. `ios-tests` auto-loads `tests.instructions.md` (or whatever your test instruction file is)
+2. `ios-tests` auto-loads whichever instruction file's `applyTo:` matches the test target (`tests.instructions.md` from `templates/instructions/tests.instructions.md.template`)
 3. `ios-tests` writes the test, runs `xcodebuild test`, returns `verified_claims` with the test name + pass result
 4. Orchestrator validates the return, reports done
 
@@ -92,7 +96,7 @@ git add .github/ docs/ai-context/ docs/_archive/
 # .github-pre-bootstrap-backup/ is gitignored by the framework's .gitignore template
 git commit -m "chore: bootstrap Copilot iOS orchestration framework"
 git push -u origin setup/copilot-ios-framework
-gh pr create --base develop --title "Bootstrap Copilot iOS orchestration framework"
+gh pr create --base <your-base-branch> --title "Bootstrap Copilot iOS orchestration framework"
 ```
 
 Reviewer checklist:
