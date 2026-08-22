@@ -199,6 +199,11 @@ releases are cut from agent sessions.
     match shell commands per top-level segment with the verb anchored at the start.
 11. **Anchor correction regexes.** Bare `you already` matched "you already have access". A false
     positive costs more trust than a miss.
+12. **A push in another repository is not this repo's push.** `doc-freshness-track` tracks where the
+    shell is per command segment (`cd`, subshell `cd`, `git -C`, `gh --repo`) and records a push only
+    when its effective directory is inside the session's `cwd`; an unknowable directory (`cd $VAR`)
+    never counts. Releasing sibling repos from scratchpad clones fired the Claude edition's gate twice
+    before this guard existed.
 
 ---
 

@@ -1,23 +1,47 @@
 // doc-freshness-track.mjs — postToolUse hook (Pattern 5, tracking half).
 // Records the last REAL production push and the last changelog edit. Never blocks.
+import { resolve, isAbsolute } from "node:path";
+import { homedir } from "node:os";
 import { readPayload, field, writeState, out } from "./hook-io.mjs";
 
 // ---- Customise ---------------------------------------------------------------
 const PROTECTED_BRANCH = "<PROTECTED_BRANCH>";   // e.g. "main"
 const CHANGELOG_PATH = "<CHANGELOG_PATH>";       // e.g. "docs/CHANGELOG.md"
+// <REPO_NAME_FRAGMENT>: a substring of this repo's GitHub name (e.g. "acme-api") so a
+// `gh pr merge --repo other/thing` in this session is not mistaken for OUR merge.
 const EDIT_TOOLS = /edit|write|apply_patch|create_file|replace/i; // tool names that write files
 const SHELL_TOOLS = /bash|shell|run_in_terminal|runCommands|execute/i;
 // ------------------------------------------------------------------------------
 
 const branchRe = new RegExp(`\\b${PROTECTED_BRANCH.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`);
 
-function isProdPush(cmd) {
+// Rule 12 — a push in ANOTHER repository is not this repo's production push.
+const insideRepo = (root, dir) => { const d = resolve(dir); return d === root || d.startsWith(root + "/"); };
+const expandPath = (raw, from) => {
+  let p = raw.trim().replace(/^["']|["']$/g, "");
+  p = p.replace(/^~(?=\/|$)/, homedir()).replace(/\$HOME\b/, homedir()).replace(/\$PWD\b/, from);
+  if (/[$`]/.test(p)) return null;                            // unresolvable — unknown location
+  return isAbsolute(p) ? p : resolve(from, p);
+};
+
+function isProdPush(cmd, repoRoot) {
   if (typeof cmd !== "string") return false;
   if (cmd.includes("<<")) return false;                       // Rule 10: heredoc body is data
+  let dir = repoRoot;
   for (const seg of cmd.split(/\n|;|\|\||&&|\|/)) {           // Rule 10: per top-level segment
-    const s = seg.trim().replace(/^sudo\s+/, "");
+    const s = seg.trim().replace(/^[(\s]+/, "").replace(/^sudo\s+/, "");
+    const cdm = s.match(/^cd\s+(\S+)/);
+    if (cdm) { dir = expandPath(cdm[1], dir); continue; }     // track where the shell is
     if (!branchRe.test(s)) continue;
-    if (/^git\s+push\b/.test(s) || /^gh\s+pr\s+merge\b/.test(s)) return true;
+    const gitC = s.match(/^git\s+-C\s+(\S+)\s+push\b/);
+    const target = gitC ? expandPath(gitC[1], dir) : dir;
+    if (target === null || !insideRepo(repoRoot, target)) continue;
+    if (/^git\s+(-C\s+\S+\s+)?push\b/.test(s)) return true;
+    if (/^gh\s+pr\s+merge\b/.test(s)) {
+      const repoFlag = s.match(/--repo[= ]\s*(\S+)/);
+      if (repoFlag && !repoFlag[1].toLowerCase().includes("<REPO_NAME_FRAGMENT>".toLowerCase())) continue;
+      return true;
+    }
   }
   return false;
 }
@@ -29,7 +53,8 @@ try {
   const now = Date.now();
   if (SHELL_TOOLS.test(tool)) {
     const cmd = input.command ?? input.cmd ?? input.commandLine ?? "";
-    if (isProdPush(cmd)) writeState({ lastProdPush: now });
+    const repoRoot = resolve(field(p, "cwd", "cwd") || process.cwd());
+    if (isProdPush(cmd, repoRoot)) writeState({ lastProdPush: now });
   } else if (EDIT_TOOLS.test(tool)) {
     const path = String(input.file_path ?? input.filePath ?? input.path ?? "");
     if (path.endsWith(CHANGELOG_PATH)) writeState({ lastChangelogEdit: now });
