@@ -1,0 +1,38 @@
+// doc-freshness-track.mjs — postToolUse hook (Pattern 5, tracking half).
+// Records the last REAL production push and the last changelog edit. Never blocks.
+import { readPayload, field, writeState, out } from "./hook-io.mjs";
+
+// ---- Customise ---------------------------------------------------------------
+const PROTECTED_BRANCH = "<PROTECTED_BRANCH>";   // e.g. "main"
+const CHANGELOG_PATH = "<CHANGELOG_PATH>";       // e.g. "docs/CHANGELOG.md"
+const EDIT_TOOLS = /edit|write|apply_patch|create_file|replace/i; // tool names that write files
+const SHELL_TOOLS = /bash|shell|run_in_terminal|runCommands|execute/i;
+// ------------------------------------------------------------------------------
+
+const branchRe = new RegExp(`\\b${PROTECTED_BRANCH.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`);
+
+function isProdPush(cmd) {
+  if (typeof cmd !== "string") return false;
+  if (cmd.includes("<<")) return false;                       // Rule 10: heredoc body is data
+  for (const seg of cmd.split(/\n|;|\|\||&&|\|/)) {           // Rule 10: per top-level segment
+    const s = seg.trim().replace(/^sudo\s+/, "");
+    if (!branchRe.test(s)) continue;
+    if (/^git\s+push\b/.test(s) || /^gh\s+pr\s+merge\b/.test(s)) return true;
+  }
+  return false;
+}
+
+try {
+  const p = readPayload();
+  const tool = String(field(p, "tool_name", "toolName") ?? "");
+  const input = field(p, "tool_input", "toolArgs") ?? {};
+  const now = Date.now();
+  if (SHELL_TOOLS.test(tool)) {
+    const cmd = input.command ?? input.cmd ?? input.commandLine ?? "";
+    if (isProdPush(cmd)) writeState({ lastProdPush: now });
+  } else if (EDIT_TOOLS.test(tool)) {
+    const path = String(input.file_path ?? input.filePath ?? input.path ?? "");
+    if (path.endsWith(CHANGELOG_PATH)) writeState({ lastChangelogEdit: now });
+  }
+} catch {}
+out({});

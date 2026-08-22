@@ -47,12 +47,14 @@ In the same Chat session, paste [`prompts/BOOTSTRAP-PROMPT.md`](../prompts/BOOTS
 
 After confirmation (per file), bootstrap generates:
 - `.github/copilot-instructions.md` (thin router, customized for your iOS app)
-- `.github/agents/<your-app>-orchestrator.md` (orchestrator persona)
-- `.github/agents/ios-ui.md`, `ios-data.md`, `ios-network.md`, `ios-tests.md`, `ios-release.md`, `ios-privacy.md`, `ios-perf.md`, `ios-bg.md` (the iOS specialist roster — selectively, per your inventory choices)
+- `.github/agents/<your-app>-orchestrator.agent.md` (orchestrator persona, with the `agents:` allowlist)
+- `.github/agents/ios-ui.agent.md`, `ios-data.agent.md`, `ios-network.agent.md`, `ios-tests.agent.md`, `ios-release.agent.md`, `ios-privacy.agent.md`, `ios-perf.agent.md`, `ios-bg.agent.md` (the iOS specialist roster — selectively, per your inventory choices)
 - `.github/instructions/swiftui.instructions.md`, `concurrency.instructions.md`, `coredata.instructions.md`, `networking.instructions.md`, `info-plist.instructions.md`, `code-signing.instructions.md` (path-globbed rules)
-- `.github/prompts/correction-capture.prompt.md`, `commit-push-pr.prompt.md`, `verify-build.prompt.md` (slash prompts, iOS-pre-filled)
+- `.github/skills/commit-push-pr/SKILL.md`, `verify-build/SKILL.md`, `correction-capture/SKILL.md`, `<your-app>-engineering/SKILL.md` (agent skills, iOS-pre-filled — cross-surface; the IDE-only prompt-file forms are optional)
 - `docs/ai-context/INDEX.md`, `HANDOFF_SCHEMA.md`, `ORCHESTRATION_SPOONFEEDER.md` (orientation maps)
+- `docs/ai-context/PROJECT.md`, `LEARNINGS.md`, `GLOSSARY.md` + one `docs/<AREA>_BACKLOG.md` (the project-truth set — [`12-PROJECT-TRUTH-AND-LEARNINGS.md`](12-PROJECT-TRUTH-AND-LEARNINGS.md))
 - `docs/_archive/README.md` (frozen archive marker)
+- (Later phase, opt-in) `.github/hooks/framework.json` + `.github/scripts/*.mjs` — [`10-MECHANICAL-ENFORCEMENT.md`](10-MECHANICAL-ENFORCEMENT.md)
 
 Each file shows you a preview before writing.
 
@@ -60,7 +62,7 @@ Each file shows you a preview before writing.
 
 ```bash
 # 1. List what was created
-ls -la .github/agents/ .github/instructions/ .github/prompts/ docs/ai-context/
+ls -la .github/agents/ .github/instructions/ .github/skills/ docs/ai-context/
 
 # 2. Verify the build still passes (the framework is doc-only; build should be unaffected)
 xcodebuild -workspace MyApp.xcworkspace -scheme MyApp build
@@ -122,6 +124,7 @@ After 2-3 weeks of real use, paste [`prompts/REFINEMENT-PROMPT.md`](../prompts/R
 - Audit `docs/ai-context/` for tier-1 → tier-3 archive moves
 - Add new pitfalls from your notes file
 - Add new instruction files for newly-discovered domains
+- Re-check platform drift (Pitfall 23) and re-stamp `PROJECT.md` §3 (what is live on the App Store / TestFlight)
 
 Output: a PR with the refinement changes. Merge.
 
@@ -153,3 +156,5 @@ Total active investment to fully bootstrap: **~2.5 hours** (Phase 1-5) + **30 mi
 - [`03-IOS-SPECIALISTS-GUIDE.md`](03-IOS-SPECIALISTS-GUIDE.md) — what each specialist looks like
 - [`08-IOS-COMMON-PITFALLS.md`](08-IOS-COMMON-PITFALLS.md) — what to watch for during real use
 - [`11-IOS-MCP-CATALOG.md`](11-IOS-MCP-CATALOG.md) — optional MCP integrations to add
+- [`12-PROJECT-TRUTH-AND-LEARNINGS.md`](12-PROJECT-TRUTH-AND-LEARNINGS.md) — the project-truth set bootstrap generates
+- [`13-MULTI-REPO-WORKSPACES.md`](13-MULTI-REPO-WORKSPACES.md) — when the app and its API repos need one orchestrator above them

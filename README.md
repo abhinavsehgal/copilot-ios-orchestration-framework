@@ -1,6 +1,8 @@
 # Copilot iOS Orchestration Framework
 
-> **Version 1.0.0** ([changelog](CHANGELOG.md)) · MIT license · iOS-only by design
+> **Version 1.1.0** ([changelog](CHANGELOG.md)) · MIT license · iOS-only by design
+>
+> **v1.1.0 (2026-08-22) — three months of production use on the stack-agnostic parent, folded into the iOS edition, and three platform claims retracted.** New chapters: **12 — Project truth, learnings and the evidence ladder** (`PROJECT.md` with a date-stamped "what is live on the App Store / TestFlight" table) and **13 — Multi-repo workspaces** (one iOS app repo + N API repos, with the `.code-workspace` + manifest + delegation pattern and version-pinned shared Swift packages). Eighteen new pitfalls — nine framework lessons and nine iOS-specific ones (APNs environment, `apns-topic`, the one-shot notification prompt, `WKWebView` route changes, Guideline 4.8, the `NSURLSession` cookie jar, orientation locks, replayed notification taps, build flavours). **Retracted, because the platform moved:** Copilot *does* have lifecycle hooks now (`.github/hooks/*.json` — chapter 10 is rewritten around them, with an `xcodebuild` build-gate sized for a busy CI box); custom agents *can* invoke custom agents (VS Code `agents:` is an allowlist); and **agent skills** (`.github/skills/`) — not prompt files — are the cross-surface equivalent of Claude Code skills. Every platform claim in v1.1.0 carries a verified-on date.
 >
 > **Purpose.** A reusable multi-agent orchestration setup for [GitHub Copilot](https://docs.github.com/en/copilot) tailored specifically for iOS engineering teams. Drops into any existing iOS codebase (UIKit / SwiftUI / Combine / async-await / Objective-C bridges) in 2-4 hours. Includes iOS-specialist agents, iOS-flavored instruction templates, an iOS pitfalls catalog, and a curated MCP integration list for the iOS toolchain.
 
@@ -16,7 +18,7 @@ This framework eliminates that translation. Out of the box:
 
 - **iOS specialist roster** — `ios-ui`, `ios-data`, `ios-network`, `ios-tests`, `ios-release`, `ios-privacy` (REVIEW-ONLY), `ios-perf`, `ios-bg`. Each one has a specific scope, tool allowlist, and Definition of Done.
 - **iOS placeholders pre-filled** — `xcodebuild` build commands, Swift / Objective-C globs, `Info.plist` paths, `*.xcconfig` rules, code-signing scopes, App Store Connect references.
-- **iOS pitfalls catalog** — 20+ recurring iOS gotchas (background `viewContext.save()`, `@MainActor` capture leaks, Info.plist usage descriptions, code signing rotation, etc.).
+- **iOS pitfalls catalog** — 40 recurring gotchas (background `viewContext.save()`, `@MainActor` capture leaks, Info.plist usage descriptions, code signing rotation, the APNs entitlement, the one-shot notification prompt, the `NSURLSession` cookie jar, etc.) plus the framework lessons learned in production.
 - **MCP integration catalog** — the curated list of iOS-relevant MCP servers (simulator, Xcode, mobile UI automation, App Store Connect, Sentry, GitHub) with what each is for and when to install.
 - **iOS-anchored bootstrap prompts** — Copilot is told upfront *"this is an iOS app — propose iOS-shaped specialists"* so it doesn't waste a turn proposing `frontend-ui`.
 
@@ -40,18 +42,20 @@ copilot-ios-orchestration-framework/
 ├── CHANGELOG.md
 ├── LICENSE
 │
-├── docs/                                  ← framework documentation (11 chapters)
+├── docs/                                  ← framework documentation (13 chapters)
 │   ├── 01-PRINCIPLES.md                   ← seven core principles
-│   ├── 02-ARCHITECTURE.md                 ← .github/ + iOS-flavored docs/ai-context/ layout
-│   ├── 03-IOS-SPECIALISTS-GUIDE.md        ← the iOS specialist roster + scope tables
-│   ├── 04-HANDOFF-SCHEMA.md               ← bidirectional schema with iOS examples
-│   ├── 05-INSTRUCTIONS-AND-PROMPTS.md     ← path-globbed instructions for iOS file paths
-│   ├── 06-INVOCATION-MODES.md             ← Chat / Edit / Cloud Agent / CLI on iOS workflow
+│   ├── 02-ARCHITECTURE.md                 ← .github/ (agents / instructions / skills / hooks) + iOS-flavored docs/ai-context/ layout
+│   ├── 03-IOS-SPECIALISTS-GUIDE.md        ← the iOS specialist roster + scope tables; .agent.md + agents: allowlist
+│   ├── 04-HANDOFF-SCHEMA.md               ← bidirectional schema with iOS examples (+ v1.1 cross-repo fields)
+│   ├── 05-INSTRUCTIONS-AND-PROMPTS.md     ← path-globbed instructions, agent skills (cross-surface), prompt files (IDE-only)
+│   ├── 06-INVOCATION-MODES.md             ← Chat / Code Review / Cloud Agent / headless `copilot -p` + the surface matrix
 │   ├── 07-FOLDER-STRUCTURE.md             ← three-tier docs organization
-│   ├── 08-IOS-COMMON-PITFALLS.md          ← 20+ iOS-specific lessons
+│   ├── 08-IOS-COMMON-PITFALLS.md          ← 40 lessons: framework + iOS-specific (22 from v1.0, 18 new in v1.1)
 │   ├── 09-IOS-RUNBOOK.md                  ← step-by-step iOS bootstrap (~2-4 hours)
-│   ├── 10-MECHANICAL-ENFORCEMENT.md       ← Copilot has no hooks; what to use instead
-│   └── 11-IOS-MCP-CATALOG.md              ← curated iOS MCP servers + when to install each
+│   ├── 10-MECHANICAL-ENFORCEMENT.md       ← (rewritten v1.1) Copilot hooks: the contract, five patterns, the xcodebuild build-gate, eleven design rules
+│   ├── 11-IOS-MCP-CATALOG.md              ← curated iOS MCP servers + when to install each
+│   ├── 12-PROJECT-TRUTH-AND-LEARNINGS.md  ← (v1.1) PROJECT.md / LEARNINGS.md / backlogs, the evidence ladder, the six-gate playbook
+│   └── 13-MULTI-REPO-WORKSPACES.md        ← (v1.1) one iOS app + N API repos: layers, three delegation mechanisms, contracts, shared Swift packages
 │
 ├── prompts/                               ← ready-to-paste Chat prompts
 │   ├── INVENTORY-PROMPT.md                ← read-only iOS-anchored project scan (run first)
@@ -65,8 +69,11 @@ copilot-ios-orchestration-framework/
     ├── SPOONFEEDER.md.template
     ├── archive-README.md.template
     │
-    ├── agents/
-    │   ├── orchestrator-agent.md.template
+    ├── PROJECT.md.template · LEARNINGS.md.template · BACKLOG.md.template · GLOSSARY.md.template   ← (v1.1) the project-truth set
+    ├── engineering-playbook-skill.md.template     ← (v1.1) six gates + evidence ladder, as .github/skills/<slug>-engineering/SKILL.md
+    │
+    ├── agents/                                    ← each becomes .github/agents/<name>.agent.md
+    │   ├── orchestrator-agent.md.template         ← carries agents: [...] (VS Code subagent allowlist)
     │   ├── ios-ui-agent.md.template               ← SwiftUI / UIKit / accessibility
     │   ├── ios-data-agent.md.template             ← CoreData / SwiftData / Realm / file storage
     │   ├── ios-network-agent.md.template          ← URLSession / async-await / Combine / certs
@@ -86,12 +93,21 @@ copilot-ios-orchestration-framework/
     │   ├── info-plist.instructions.md.template
     │   └── code-signing.instructions.md.template
     │
-    └── prompts/
+    ├── skills/                                    ← (v1.1) cross-surface Agent Skills — cloud agent, CLI and every IDE
+    │   ├── commit-push-pr/SKILL.md.template       ← /commit-push-pr (xcodebuild gate, signing-material refusal)
+    │   ├── verify-build/SKILL.md.template         ← /verify-build (xcodebuild; a killed build is inconclusive)
+    │   └── correction-capture/SKILL.md.template   ← /correction-capture
+    │
+    ├── hooks/                                     ← (v1.1) hooks.json + hook-io / correction-detect / doc-freshness-track / lint-fix (swiftformat) / stop-gate (xcodebuild, 20-min cap)
+    │
+    ├── workspace/                                 ← (v1.1) the multi-repo layer: .code-workspace, manifest, router, orchestrator + 2 specialists, contract instructions, /delegate skill + scripts
+    │
+    └── prompts/                                   ← IDE-only prompt files (v1.0 forms, superseded by skills/)
         ├── prompt.md.template                     ← generic prompt-file shape
-        ├── chatmode.md.template                   ← optional persona shape
-        ├── correction-capture.prompt.md.template  ← /correction-capture (iOS-flavored)
-        ├── commit-push-pr.prompt.md.template      ← /commit-push-pr (xcodebuild pre-filled)
-        └── verify-build.prompt.md.template        ← /verify-build (xcodebuild pre-filled)
+        ├── chatmode.md.template                   ← RETIRED — chat modes renamed to .agent.md; kept for migrations
+        ├── correction-capture.prompt.md.template  ← /correction-capture (IDE-only form)
+        ├── commit-push-pr.prompt.md.template      ← /commit-push-pr (IDE-only form)
+        └── verify-build.prompt.md.template        ← /verify-build (IDE-only form)
 ```
 
 ---
@@ -122,8 +138,10 @@ git checkout -b setup/copilot-ios-framework
 #    Paste prompts/BOOTSTRAP-PROMPT.md (in the same Chat session)
 
 # 7. Verify locally
-ls .github/agents/                             # should list ios-ui, ios-data, etc.
+ls .github/agents/                             # should list ios-ui.agent.md, ios-data.agent.md, etc.
 ls .github/instructions/                       # should list domain-specific instruction files
+ls .github/skills/                             # commit-push-pr, verify-build, correction-capture, <your-app>-engineering
+ls docs/ai-context/                            # INDEX, PROJECT, LEARNINGS, GLOSSARY, HANDOFF_SCHEMA, …
 xcodebuild -workspace MyApp.xcworkspace -scheme MyApp build  # should still succeed
 
 # 8. Try a real task via the orchestrator
@@ -131,7 +149,7 @@ xcodebuild -workspace MyApp.xcworkspace -scheme MyApp build  # should still succ
 #    Verify the handoff schema works end-to-end
 
 # 9. Commit, PR, merge
-git add .github/ docs/ai-context/ docs/_archive/
+git add .github/ docs/ai-context/ docs/_archive/ docs/*_BACKLOG.md
 git commit -m "chore: bootstrap Copilot iOS orchestration framework"
 git push -u origin setup/copilot-ios-framework
 gh pr create --base develop --title "Bootstrap Copilot iOS orchestration"
@@ -159,8 +177,9 @@ Read in this order: README → [01-PRINCIPLES](docs/01-PRINCIPLES.md) → [03-IO
 ## What this framework does NOT include
 
 - **iOS code samples or sample app.** Templates have placeholders. You fill in for your project.
-- **Vendor lock-in.** No App Store accounts, no third-party SaaS dependencies. Only the documented Copilot customization surface (`.github/instructions/`, `.github/prompts/`, `.github/agents/`, `.github/chatmodes/`, `.github/copilot-instructions.md`) plus optional MCP integrations.
-- **Runtime hooks.** Copilot doesn't have programmable lifecycle hooks. Mechanical enforcement happens via `applyTo:` auto-loading + IDE auto-fix + pre-commit. See [`docs/10-MECHANICAL-ENFORCEMENT.md`](docs/10-MECHANICAL-ENFORCEMENT.md) and Pitfall 19 in the [common pitfalls doc](docs/08-IOS-COMMON-PITFALLS.md).
+- **Vendor lock-in.** No App Store accounts, no third-party SaaS dependencies. Only the documented Copilot customization surface (`.github/copilot-instructions.md`, `.github/instructions/`, `.github/agents/*.agent.md`, `.github/skills/`, `.github/hooks/`, and the IDE-only `.github/prompts/`; chat modes are retired — verified 2026-08-22) plus optional MCP integrations.
+- **Hooks in the default install.** Copilot *does* have lifecycle hooks as of v1.1 (`.github/hooks/*.json`), and five iOS-pre-filled templates ship — but they are an explicit later-phase decision ([`docs/10-MECHANICAL-ENFORCEMENT.md`](docs/10-MECHANICAL-ENFORCEMENT.md)), not a setup-time default. Documentation discipline + `applyTo:` auto-loading stay the primary layer. (v1.0 said "Copilot doesn't have programmable lifecycle hooks" — retracted; Pitfall 19 in the [common pitfalls doc](docs/08-IOS-COMMON-PITFALLS.md).)
+- **A proven iOS field trial.** Still none (see the changelog's known limitations) — the multi-repo layer in particular is designed from verified platform behaviour, not from an iOS adoption.
 
 ---
 
@@ -181,7 +200,7 @@ See [`docs/03-IOS-SPECIALISTS-GUIDE.md`](docs/03-IOS-SPECIALISTS-GUIDE.md) for t
 After bootstrapping, the framework needs minimal upkeep:
 
 - **Per task:** instruction files accumulate naturally as production teaches you new gotchas (1-2 per month is normal — code signing rotation, new entitlement keys, OS-version-specific bugs)
-- **Per quarter:** run [`prompts/REFINEMENT-PROMPT.md`](prompts/REFINEMENT-PROMPT.md) to audit specialist scope drift, archive stale docs, decide if MCPs should be added/removed
+- **Per quarter:** run [`prompts/REFINEMENT-PROMPT.md`](prompts/REFINEMENT-PROMPT.md) to audit specialist scope drift, archive stale docs, decide if MCPs should be added/removed, re-check platform drift (Pitfall 23 — three v1.0 claims were false within three months), and re-stamp `PROJECT.md` §3
 - **Per major iOS release:** re-read [`docs/08-IOS-COMMON-PITFALLS.md`](docs/08-IOS-COMMON-PITFALLS.md) and add new pitfalls (every iOS major brings 3-5 new gotchas — privacy manifests, predictable IDs, etc.)
 
 ---
@@ -203,6 +222,12 @@ No. The framework only ships markdown files in `.github/` and `docs/`. Nothing r
 **Q: Is this Anthropic-official / GitHub-official?**
 Neither. This is a community framework built on top of GitHub Copilot's documented customization surface. No special access required, no sponsorship.
 
+**Q: Prompt files or skills?**
+Skills (`.github/skills/<name>/SKILL.md`). They work on the cloud agent, the CLI, code review and every IDE; prompt files are IDE-only and the VS Code docs say to convert a prompt to a skill for the Agent Host. The v1.0 prompt-file templates (`/commit-push-pr`, `/verify-build`, `/correction-capture`) are kept for IDE use; the v1.1 skills supersede them — same `xcodebuild` pre-fills.
+
+**Q: We have one iOS app repo plus several API repos (and an Android repo). Agents at every level, or one top-level orchestrator?**
+Both, in layers — and not a separate framework. Every repo keeps its own install (the iOS repo keeps this one); shared specialists move to the organisation's `.github-private/agents/`; a workspace repo with a `.code-workspace` file, a manifest and gitignored clones holds *only* the cross-repo orchestrator, the service map and the contract rules, and delegates writes to each child's own orchestrator (its own `copilot -p` session, or a VS Code subagent). The iOS app is a consumer of every contract; a shared Swift package is a contract too, pinned by tag. Design, verified platform behaviour, and a one-afternoon POC recipe: [`docs/13-MULTI-REPO-WORKSPACES.md`](docs/13-MULTI-REPO-WORKSPACES.md) + `templates/workspace/`.
+
 **Q: Can I share with another iOS team?**
 This repo is public, MIT licensed. Use freely.
 
@@ -210,6 +235,8 @@ This repo is public, MIT licensed. Use freely.
 
 - [`github-copilot-orchestration-framework`](https://github.com/abhinavsehgal/github-copilot-orchestration-framework) — the stack-agnostic parent. Use for non-iOS projects.
 - [`claude-orchestration-framework`](https://github.com/abhinavsehgal/claude-orchestration-framework) — the Claude Code equivalent. Use if your team uses Claude Code instead of (or alongside) Copilot.
+
+All three editions released together on **2026-08-22**: Claude v1.2.0, Copilot v1.2.0, iOS v1.1.0 — the same production lessons (project truth, multi-repo workspaces, the new pitfalls) and the same platform re-verification, each in its own edition's vocabulary.
 
 ## Contributing
 

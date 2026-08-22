@@ -6,16 +6,18 @@ The eight default iOS specialist agents shipped in this framework, what each one
 
 ```
 .github/agents/
-├── <your-app>-orchestrator.md      ← coordinator (no implementation)
-├── ios-ui.md                        ← SwiftUI / UIKit / Auto Layout / accessibility
-├── ios-data.md                      ← CoreData / SwiftData / Realm / file storage
-├── ios-network.md                   ← URLSession / async-await / Combine / cert pinning
-├── ios-tests.md                     ← XCTest / XCUITest / snapshot tests
-├── ios-release.md                   ← Fastlane / TestFlight / App Store Connect
-├── ios-privacy.md                   ← REVIEW-ONLY: Info.plist / ATT / nutrition labels
-├── ios-perf.md                      ← Instruments / hangs / memory / launch time
-└── ios-bg.md                        ← BGTaskScheduler / silent push / lifecycle
+├── <your-app>-orchestrator.agent.md ← coordinator (no implementation); carries agents: [...]
+├── ios-ui.agent.md                  ← SwiftUI / UIKit / Auto Layout / accessibility
+├── ios-data.agent.md                ← CoreData / SwiftData / Realm / file storage
+├── ios-network.agent.md             ← URLSession / async-await / Combine / cert pinning
+├── ios-tests.agent.md               ← XCTest / XCUITest / snapshot tests
+├── ios-release.agent.md             ← Fastlane / TestFlight / App Store Connect
+├── ios-privacy.agent.md             ← REVIEW-ONLY: Info.plist / ATT / nutrition labels
+├── ios-perf.agent.md                ← Instruments / hangs / memory / launch time
+└── ios-bg.agent.md                  ← BGTaskScheduler / silent push / lifecycle
 ```
+
+File naming: `<name>.agent.md` is the current suffix (verified 2026-08-22); a bare `<name>.md` still loads. Chat modes (`.chatmode.md`) are retired — rename them to `.agent.md`.
 
 Eight specialists is a lot for a small app. **Drop the ones you don't need.** A simple app might keep just `ios-ui`, `ios-data`, `ios-network`, `ios-tests`. A pre-launch app skips `ios-release`. A no-background app skips `ios-bg`.
 
@@ -35,10 +37,13 @@ The coordinator. Has NO Edit/Write tools — it can only Read, Grep, Glob, Bash.
 **Frontmatter:**
 ```yaml
 tools: Read, Grep, Glob, Bash, mcp__github__*
+agents: [ios-ui, ios-data, ios-network, ios-tests, ios-release, ios-privacy, ios-perf, ios-bg]   # VS Code subagent allowlist; ignored by the cloud agent
 target: vscode, github-copilot
 disable-model-invocation: true        # only invoked explicitly
 user-invocable: true
 ```
+
+`agents:` is the list of agents the orchestrator may invoke as **subagents** in VS Code (`runSubagent`; `*` = all — never on an orchestrator). The cloud agent ignores the field, so keep the same roster in the body's routing table. Specialists carry no `agents:`: by framework convention a specialist still returns `recommended_next_agent` to the orchestrator rather than chaining into another specialist — a choice for auditability now that nesting is possible, not a platform limit.
 
 ### `ios-ui`
 

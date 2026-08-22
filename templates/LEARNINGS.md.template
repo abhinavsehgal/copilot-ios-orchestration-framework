@@ -1,0 +1,131 @@
+# <PROJECT_NAME> — Learnings & Decision Records
+
+> **What this is.** Durable knowledge distilled from building <PROJECT_NAME> with AI agents: the
+> decisions that shape the product, the approaches that failed, the bug patterns that recur, and the
+> working-method corrections the project owner has had to give more than once. A fresh agent with no
+> transcript history should read this to avoid re-deriving (or re-committing) any of it.
+>
+> **What this is NOT.** Not architecture (→ `PROJECT.md`), not hard rules (→ `.github/instructions/*.instructions.md`,
+> auto-loaded by `applyTo:` path match), not a changelog (→ `<CHANGELOG_PATH>`). Where a lesson is already a hard rule,
+> this file carries one line + a pointer, never a copy.
+>
+> **Dating convention.** Every entry carries the date it was learned or decided. A dated fact is a
+> claim about that date — re-verify before treating it as current. Current state lives in `PROJECT.md`.
+
+---
+
+## A. Decision records
+
+<One entry per decision that shapes the product or the engineering model. Newest first.>
+
+- **<YYYY-MM-DD> — <Decision title>.** <What was decided, by whom.> **Why:** <the reason that would
+  let a future agent re-derive it>. **Supersedes:** <earlier decision, if any>. → <link to the rule /
+  doc that codifies it>.
+
+---
+
+## B. Failed or unsafe approaches
+
+<So nobody re-tries them. Each entry: what was tried, what broke, what replaced it.>
+
+- **B1 (<date>) — <approach>.** Tried: <…>. Broke: <observable consequence>. Replaced by: <…>.
+  → <rule or doc>.
+
+---
+
+## C. Recurring bug patterns — symptom → first thing to check
+
+<The cheapest section to write and the one that saves the most hours.>
+
+| Symptom | First thing to check |
+|---|---|
+| <e.g. "Feature works on one client, not the other"> | <e.g. "the two screens fetch different endpoints — compare the data source, not the markup"> |
+| <e.g. "Write 'succeeded' but no row appears"> | <e.g. "the error field on the write result — this layer never throws"> |
+
+---
+
+## D. Agent behaviour corrections
+
+<Mistakes agents made repeatedly, and the replacement behaviour. These came from real owner
+corrections; treat them as standing instructions.>
+
+- **Instead of:** trusting the working tree you were launched in.
+  **Do:** fetch and compare against the remote base FIRST; work in an isolated worktree.
+
+- **Instead of:** redesigning or replacing a system before inspecting it.
+  **Do:** audit what exists, classify each requirement (already supported / broken / partial / not
+  supported / not needed), and extend compatibly. Reuse the sources of truth in `PROJECT.md` §6.
+
+- **Instead of:** trusting prose docs (including this file) over executable behaviour.
+  **Do:** reconcile with code, tests, schema and git history. Docs record intent at a date; code runs.
+
+- **Instead of:** treating a green build or passing test as complete validation.
+  **Do:** prove the user-visible flow; verify the data landed; check the third-party dashboard.
+
+- **Instead of:** skipping validation because the UI state is hard to reach.
+  **Do:** create the state (test account, seed, wizard) and test end to end; tear down after.
+
+- **Instead of:** carrying an approval forward from an earlier turn or session.
+  **Do:** production writes and deploys need a current-turn approval naming the action and environment.
+
+- **Instead of:** saying "we'll do X later" in a summary.
+  **Do:** append it to `docs/<AREA>_BACKLOG.md` (what / why / effort / revisit-when) before the turn ends.
+
+- **Instead of:** renaming a user-visible label where you found it.
+  **Do:** grep the OLD literal repo-wide — the misses are always in files you didn't open.
+
+- **Instead of:** answering questions about a vendor/platform from memory.
+  **Do:** check the live dashboard, API or docs; memory of vendor behaviour goes stale.
+
+<ADD_PROJECT_SPECIFIC_CORRECTIONS_HERE>
+
+---
+
+## E. Working with the project owner
+
+<The owner's preferred formats and the approval gates. Generic starters — edit to match.>
+
+- **Multi-item status = a table, not prose.** One row per item, current state per row.
+- **Open decisions = one numbered master list**, resolved one at a time; never drop an item.
+- **Approval gates (never assume):** <push/merge to production>; <any production data write,
+  per incident, naming the environment>; <publishing or sending anything outward>; <editing
+  canonical product docs>.
+- **Communication register:** <any standing preference about vocabulary, level of detail, or
+  audience — e.g. "plain language, no bare jargon; translate each technical term once">.
+
+---
+
+## F. Documentation maintenance protocol
+
+Where knowledge goes:
+
+| Kind of knowledge | Home |
+|---|---|
+| Universal behaviour + routing | `.github/copilot-instructions.md` (keep < ~200 lines; `AGENTS.md` if shared with other AI tools) |
+| Current project truth / what's live where | `docs/ai-context/PROJECT.md` |
+| Decisions, failures, corrections (durable, dated) | this file |
+| Hard rules scoped to file paths | `.github/instructions/*.instructions.md` (`applyTo:` frontmatter) |
+| Per-area orientation (50–150 lines) | `docs/ai-context/<area>.md` |
+| Canonical deep reference | `docs/<UPPERCASE>.md` |
+| Deferred work | `docs/<AREA>_BACKLOG.md` |
+| Multi-step procedures | `.github/skills/*/SKILL.md` |
+| Machine-private session pointers | any IDE- or CLI-local memory the tool keeps (NOT visible to teammates or other agents — anything durable must also land above) |
+
+Rules of the protocol:
+1. **One home per fact.** Everywhere else links to it.
+2. **Date-stamp state claims.** "Live on prod 2026-07-10" ages gracefully; "live on prod" becomes a lie.
+3. **Prune on contact.** A verified-stale entry is fixed or deleted in the same turn. Conflicts you
+   can't resolve get a ⚠ CONFLICT flag for the owner, never a silent pick.
+4. **New durable lesson → the right home, same turn.** Path-scoped gotcha → instruction file;
+   decision/failure → this file; state change → `PROJECT.md` + changelog.
+5. **Don't persist:** session-specific context, one-off values, anything derivable from code/git in
+   seconds, generic engineering advice.
+
+---
+
+## Cross-links
+
+- `docs/ai-context/PROJECT.md` — current project truth.
+- `docs/ai-context/INDEX.md` — task-type routing.
+- `docs/ai-context/HOOKS.md` — deterministic enforcement (if `.github/hooks/` is installed).
+- `<CHANGELOG_PATH>` — dated release log.

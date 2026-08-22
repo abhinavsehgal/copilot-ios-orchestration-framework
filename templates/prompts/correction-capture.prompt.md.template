@@ -6,7 +6,7 @@ description: After the user issues a correction, decide whether the lesson shoul
 
 > **Invocation.** Type `/correction-capture` immediately after the user issues a correction.
 >
-> **Why this exists.** Copilot has no Stop event, so this discipline can't be auto-triggered. The cost of forgetting to invoke this is the user issuing the same correction again next session. Encode the invocation step into your orchestrator agent's incoming-feedback rules so it's not entirely user-driven.
+> **Why this exists.** Corrections that live only in conversation are re-issued next session. As of v1.1.0 the `userPromptSubmitted` + `agentStop` hooks (`docs/10-MECHANICAL-ENFORCEMENT.md` Pattern 2) trigger this discipline automatically, and the cross-surface form is the skill at `templates/skills/correction-capture/SKILL.md.template`. This prompt-file form is IDE-only — keep it for IDEs without hooks, and encode the invocation step into your orchestrator agent's incoming-feedback rules so it's not entirely user-driven.
 
 ## When to invoke
 

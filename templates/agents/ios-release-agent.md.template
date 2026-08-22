@@ -1,4 +1,6 @@
 ---
+# File: .github/agents/<PROJECT_SLUG>-ios-release.agent.md  (`.agent.md` is the current suffix; bare `.md` still loads)
+# No `agents:` field on a specialist — it returns `recommended_next_agent` to the orchestrator instead of invoking other agents (Chapter 3).
 name: <PROJECT_SLUG>-ios-release
 description: Fastlane / TestFlight / App Store Connect specialist for <PROJECT_NAME>. Owns build automation, version bumping, signing, submission. Auto-loads code-signing.instructions.md.
 tools: Read, Edit, MultiEdit, Bash, Grep, Glob, mcp__github__*, mcp__app-store-connect__*

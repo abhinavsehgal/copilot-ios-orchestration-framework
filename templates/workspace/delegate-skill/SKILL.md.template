@@ -1,0 +1,26 @@
+---
+# File: .github/skills/delegate/SKILL.md  (invoked as /delegate <repo> <handoff-file>)
+name: delegate
+description: Run a child repo's own orchestrator, in the child's own Copilot CLI session, on one framework handoff file. Use from the workspace orchestrator for any cross-repo WRITE (Mechanism A, docs/13-MULTI-REPO-WORKSPACES.md). Never for single-repo work.
+argument-hint: "<repo-name> <path/to/handoff.yaml>"
+---
+
+# /delegate — run a child's orchestrator in its own session
+
+## Steps
+1. Confirm `<repo-name>` is in `workspace.json` and the handoff file carries `repo: <repo-name>`
+   plus the full `handoff:` block (`docs/ai-context/HANDOFF_SCHEMA.md`). Refuse otherwise.
+2. Confirm the handoff's `contract_impact.level` is `none` or `additive`; a `breaking` level is
+   refused here — re-issue as add → move consumers → remove.
+3. Run `scripts/delegate.sh <repo-name> <handoff-file>`. It `cd`s into the child and runs
+   `copilot -p … --agent=<repo>-orchestrator` with the tool allowlist from `workspace.json`. The
+   child's instruction files, agents, skills and `.github/hooks/*.json` all apply.
+4. Read the `return:` block it prints. Validate per the schema: `rejected_claims` → re-plan;
+   `contracts_changed` with `backward_compatible: false` → STOP; `deferred_work` without a backlog
+   path → push back to the child.
+5. Report: handoff id, repo, status, files changed (from the return), and the path of the full
+   output under `.github/returns/`.
+
+## Never
+- `--allow-all-tools` on a repo you don't fully trust (`-p` runs its hooks unprompted).
+- Delegate to two repos that share a contract in parallel.

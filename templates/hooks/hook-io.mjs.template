@@ -1,0 +1,34 @@
+// hook-io.mjs — shared helpers for the Copilot hook scripts (docs/10-MECHANICAL-ENFORCEMENT.md).
+// Copy to .github/scripts/hook-io.mjs. Stack-agnostic.
+import { readFileSync, writeFileSync, mkdirSync, existsSync, unlinkSync } from "node:fs";
+import { join } from "node:path";
+
+export const STATE_DIR = join(process.cwd(), ".github", "hooks", ".state"); // gitignore this
+
+export function readPayload() {
+  try { return JSON.parse(readFileSync(0, "utf8") || "{}"); } catch { return {}; }
+}
+// Copilot delivers snake_case on some surfaces and camelCase on others — read both.
+export function field(p, snake, camel) { return p?.[snake] ?? p?.[camel]; }
+
+export function out(obj) { process.stdout.write(JSON.stringify(obj)); }
+
+export function readState() {
+  try { return JSON.parse(readFileSync(join(STATE_DIR, "state.json"), "utf8")); } catch { return {}; }
+}
+export function writeState(patch) {
+  mkdirSync(STATE_DIR, { recursive: true });
+  writeFileSync(join(STATE_DIR, "state.json"), JSON.stringify({ ...readState(), ...patch }));
+}
+export function flag(name) { return join(STATE_DIR, name); }
+export function setFlag(name) { mkdirSync(STATE_DIR, { recursive: true }); writeFileSync(flag(name), String(Date.now())); }
+export function hasFlag(name) { return existsSync(flag(name)); }
+export function clearFlag(name) { try { unlinkSync(flag(name)); } catch {} }
+
+// Rule 10 — quoted text is data. Strip fenced blocks, inline code and heredoc bodies.
+export function stripQuoted(text) {
+  return String(text ?? "")
+    .replace(/```[\s\S]*?```/g, " ")
+    .replace(/`[^`\n]*`/g, " ")
+    .replace(/<<-?\s*['"]?(\w+)['"]?[\s\S]*?\n\1\b/g, " ");
+}

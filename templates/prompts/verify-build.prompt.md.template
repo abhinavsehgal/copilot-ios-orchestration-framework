@@ -1,4 +1,5 @@
 ---
+# IDE-only prompt-file form (v1.0). The cross-surface AGENT SKILL that supersedes it — cloud agent, CLI and every IDE — is templates/skills/verify-build/SKILL.md.template.
 description: Run xcodebuild and report success or the failure tail. Used by orchestrator/specialists as the build-gate equivalent before declaring `status: completed`.
 ---
 

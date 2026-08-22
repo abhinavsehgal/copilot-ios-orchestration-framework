@@ -92,13 +92,27 @@ For each file in the approved list (from Phase A's decision gate):
 4. `docs/ai-context/HANDOFF_SCHEMA.md` (the bidirectional contract)
 5. `docs/ai-context/ORCHESTRATION_SPOONFEEDER.md` (human-readable usage guide)
 6. `.github/copilot-instructions.md` (thin router — golden rules + workflow + cross-links)
-7. `.github/agents/<project-slug>-orchestrator.md` (orchestrator persona)
-8. Each iOS specialist agent file (in user's confirmed list; defaults to all 8)
+7. `.github/agents/<project-slug>-orchestrator.agent.md` (orchestrator persona; `agents:` = the exact specialist names generated in step 8 — never `*`)
+8. Each iOS specialist agent file as `.github/agents/<name>.agent.md` (in user's confirmed list; defaults to all 8; no `agents:` field on a specialist)
 9. Each `.github/instructions/*.instructions.md` (in user's confirmed list)
-10. `.github/prompts/correction-capture.prompt.md` (iOS-flavored)
-11. `.github/prompts/commit-push-pr.prompt.md` (iOS-pre-filled with build/test commands)
-12. `.github/prompts/verify-build.prompt.md` (iOS-pre-filled)
-13. (Optional) Tier-2 canonical doc stubs: `docs/ARCHITECTURE.md`, `docs/BUILD_SYSTEM.md`, `docs/PRIVACY_AND_DATA.md`, etc. — only if user said yes in INVENTORY
+10. `.github/skills/commit-push-pr/SKILL.md` (iOS-pre-filled with build/test commands — an Agent Skill, so it runs on the cloud agent and the CLI too)
+11. `.github/skills/verify-build/SKILL.md` (iOS-pre-filled)
+12. `.github/skills/correction-capture/SKILL.md` (iOS-flavored). The IDE-only `.github/prompts/*.prompt.md` forms are optional — generate them only if the user asked for prompt files specifically
+13. **The project-truth set** (v1.1.0) — see the step below
+14. (Optional) Tier-2 canonical doc stubs: `docs/ARCHITECTURE.md`, `docs/BUILD_SYSTEM.md`, `docs/PRIVACY_AND_DATA.md`, etc. — only if user said yes in INVENTORY
+15. (Optional, later-phase) `.github/hooks/framework.json` + `.github/scripts/*.mjs` from `<framework path>/templates/hooks/` — only if the user explicitly asked for mechanical enforcement (`docs/10-MECHANICAL-ENFORCEMENT.md`); fill `<WORKSPACE>` / `<SCHEME>` in `stop-gate.mjs` and keep the hook `timeoutSec` above `BUILD_CAP_MS`
+
+### Step 13 — Create the project-truth set (v1.1.0)
+
+These files are what a FRESH agent with no transcript reads first (`docs/12-PROJECT-TRUTH-AND-LEARNINGS.md`). Generate them from the codebase with the same evidence discipline as the instruction files — every state claim date-stamped, every command copied from the real scheme / Fastfile / CI config, never guessed:
+
+- `docs/ai-context/PROJECT.md` from `<framework path>/templates/PROJECT.md.template`. Fill §2 (branches → App Store / TestFlight / internal builds, and **what the pipeline does NOT do** — provisioning-profile rotation, App Store Connect metadata, TestFlight promotion, backend migrations the app depends on), §3 (what is live where — App Store version/build, latest TestFlight, backend per environment; if you cannot verify one, write `unknown`, never a guess), §6 (sources of truth: the canonical helper per concept, found by grep), §7 (commands, verified against the scheme list and the Fastfile).
+- `docs/ai-context/LEARNINGS.md` from `<framework path>/templates/LEARNINGS.md.template`. On a brownfield repo, seed §A/§B from the git log, App Review rejection notes and any post-mortems or ADRs; seed §D with the generic corrections already in the template; leave §E for the owner to fill.
+- `docs/ai-context/GLOSSARY.md` from `<framework path>/templates/GLOSSARY.md.template` — list every domain concept you found called by more than one name (model field vs API field vs screen label), with the file:field evidence.
+- `.github/skills/<project-slug>-engineering/SKILL.md` from `<framework path>/templates/engineering-playbook-skill.md.template` — an Agent Skill (frontmatter `name` + `description`), so it loads on the cloud agent and the CLI as well as in the IDE. The directory name must equal the `name:` field.
+- One `docs/<AREA>_BACKLOG.md` from `<framework path>/templates/BACKLOG.md.template` for the largest area, seeded with any TODO/FIXME clusters you found (each with what / why / effort / revisit-when).
+
+Show me each file before saving.
 
 Each generated file gets:
 - A clean header with file purpose
@@ -111,14 +125,14 @@ Each generated file gets:
 After all files are written:
 
 1. List all generated paths in a single block (so the user can `git add` them in one command)
-2. Run a quick sanity check: read each generated file's first line; confirm no template placeholders survived (no `<UPPERCASE>` strings in the output)
+2. Run a quick sanity check: read each generated file's first line; confirm no template placeholders survived (no `<UPPERCASE>` strings in the output); confirm every name in the orchestrator's `agents:` list exists as `.github/agents/<name>.agent.md`; confirm each skill's directory name equals its `name:`
 3. Suggest the next 3 actions:
    ```bash
    # 1. Sanity-check that the build still passes
    <BUILD_COMMAND>
 
    # 2. Add and commit
-   git add .github/ docs/ai-context/ docs/_archive/ .gitignore
+   git add .github/ docs/ai-context/ docs/_archive/ docs/*_BACKLOG.md .gitignore
    git commit -m "chore: bootstrap Copilot iOS orchestration framework"
 
    # 3. Push and PR
@@ -135,5 +149,7 @@ After all files are written:
 - **NEVER** stage / commit / push as part of bootstrap — that's the user's call after they review the generated files
 - **NEVER** skip pre-flight 1 (the snapshot) — even on a "clean" repo, the safety net is cheap
 - **NEVER** write a file that has unresolved `<UPPERCASE_PLACEHOLDER>` in it — those must all be substituted
+- **NEVER** create `.github/chatmodes/*.chatmode.md` — chat modes are retired; if the repo has them, propose a `git mv` to `.github/agents/<name>.agent.md` in the pre-flight decision gate
+- **NEVER** guess a `PROJECT.md` §3 environment state — write `unknown` and flag it
 
 Begin Phase A pre-flight now. Show every check + result. Wait for user "proceed" before Phase B.

@@ -16,23 +16,27 @@ If a claim cannot be tied to a `file:line`, `Info.plist:key`, schema, App Store 
 2. **Always start on `<DEFAULT_BASE_BRANCH>`.** Run `<BUILD_COMMAND>` before commit.
 3. **Don't refactor outside the task.** Preserve existing behavior unless asked.
 4. **Read the matching `.github/instructions/<NAME>.instructions.md` before editing.** Auto-loaded by `applyTo:` glob; if you see one in context, read its Hard rules first.
-5. **Never commit signing material:** `.cer`, `.p12`, `.mobileprovision`, `*.keychain-db`, anything matching `secret`/`credentials`/`private-key`. Use the `/commit-push-pr` slash prompt — it refuses to stage these.
+5. **Never commit signing material:** `.cer`, `.p12`, `.mobileprovision`, `*.keychain-db`, anything matching `secret`/`credentials`/`private-key`. Use the `/commit-push-pr` skill — it refuses to stage these.
 6. **For privacy-touching changes** (Info.plist, entitlements, third-party SDK additions), `ios-privacy` REVIEW-ONLY agent must audit before merge.
 7. **`@MainActor` discipline** — anything mutating `@Published` / `@State` / UIView state runs on main. Use `await MainActor.run { }` for async returns.
-8. **Multi-agent handoffs are bidirectional and structured.** Orchestrator → specialist uses `handoff:` YAML. Specialist → orchestrator uses `return:` YAML. See `docs/ai-context/HANDOFF_SCHEMA.md`.
+8. **Multi-agent handoffs are bidirectional and structured.** Orchestrator → specialist uses `handoff:` YAML. Specialist → orchestrator uses `return:` YAML. See `docs/ai-context/HANDOFF_SCHEMA.md`. **No evidence, no claim.**
+9. **Corrections harden into instruction files.** If the owner corrected a *recurring* pattern this turn, end the turn by drafting a one-line patch to the right `.github/instructions/<domain>.instructions.md` and ask for approval. Never say "I'll remember" — any memory the IDE or CLI keeps is machine-local and invisible to every other agent and teammate.
+10. **Deferred work must be written, not spoken.** Any "later" / follow-up / known gap named in a summary is appended to `docs/<AREA>_BACKLOG.md` (what / why / effort / revisit-when) before the turn ends.
+11. **Every production push freshens the docs — same turn, no exceptions.** A push to `main`, an App Store submission or an external-TestFlight promotion updates `<CHANGELOG_PATH>` (the anchor), the affected orientation map(s), the affected instruction files, and `docs/ai-context/PROJECT.md` §3 if what is live on the App Store / TestFlight changed. (Enforced by the `agentStop` doc-freshness hook if `.github/hooks/` is installed — see `docs/ai-context/HOOKS.md`.)
+12. **One name per concept.** `docs/ai-context/GLOSSARY.md` is a rule file; adding a new name for an existing concept is a defect.
 
 ## Mandatory workflow (every non-trivial task)
 
 1. Restate the task.
 2. Identify affected specialist(s) (UI / data / network / tests / release / etc.).
-3. Read `docs/ai-context/INDEX.md`.
+3. Read `docs/ai-context/PROJECT.md` (current truth — especially §3, what is live where: App Store / TestFlight / backend) and `docs/ai-context/INDEX.md`. Skim `docs/ai-context/LEARNINGS.md` §D (agent corrections) before the first edit.
 4. Read the minimum orientation map(s) flagged for this task (each ~50-150 lines).
 5. **For each file you plan to edit, look up matching `.github/instructions/*.instructions.md` and read it.**
 6. Use a specialist agent (`@<SPECIALIST_NAME>`) only when useful. For medium/complex cross-domain tasks, use `@<PROJECT_SLUG>-orchestrator`.
 7. Inspect code before proposing changes.
 8. Smallest safe change.
-9. Run relevant checks (`xcodebuild test`, snapshot tests, accessibility audit per task).
-10. **Definition of done:** report changed files, tests run, risks, follow-ups, AND the list of `.github/instructions/*.instructions.md` files read before editing.
+9. Run relevant checks (`xcodebuild test`, snapshot tests, accessibility audit per task). Verification follows the proof ladder in `.github/skills/<PROJECT_SLUG>-engineering/SKILL.md` (a green build is evidence, not proof).
+10. **Definition of done:** report changed files, checks run with results, risks, follow-ups (written to a backlog), AND the list of `.github/instructions/*.instructions.md` files read before editing.
 
 ## Task type → Read this
 
@@ -47,6 +51,8 @@ If a claim cannot be tied to a `file:line`, `Info.plist:key`, schema, App Store 
 | Performance / Instruments / Crashlytics triage | `docs/ai-context/performance-baseline.md` | `@<PROJECT_SLUG>-ios-perf` |
 | Background tasks / silent push / lifecycle | `docs/ai-context/background-tasks.md` | `@<PROJECT_SLUG>-ios-bg` |
 | Cross-domain feature, multi-step | `docs/ai-context/INDEX.md` + `docs/ai-context/ORCHESTRATION_SPOONFEEDER.md` | `@<PROJECT_SLUG>-orchestrator` |
+| What is live where / past decisions / vocabulary | `docs/ai-context/PROJECT.md` · `docs/ai-context/LEARNINGS.md` · `docs/ai-context/GLOSSARY.md` | — |
+| The app + its API repo(s) in one change | the workspace repo (`docs/13-MULTI-REPO-WORKSPACES.md` in the framework) | `<WORKSPACE_SLUG>-orchestrator` (if a workspace exists) |
 
 ## Branches & deploy
 
@@ -75,7 +81,18 @@ swiftformat .
 open <XCODE_WORKSPACE>
 ```
 
+## Skills (repeatable workflows — work on the cloud agent, CLI and IDEs alike)
+
+- `/<PROJECT_SLUG>-engineering` — the six-gate playbook + evidence ladder (start here when no more specific workflow fits)
+- `/commit-push-pr` — validate → `xcodebuild` → commit → push → PR against `<DEFAULT_BASE_BRANCH>`; refuses to stage signing material
+- `/verify-build` — run `xcodebuild` and report the real result (a killed build is inconclusive, not failed)
+- `/correction-capture` — turn a correction into an instruction-file patch
+
+(Prompt files under `.github/prompts/` are IDE-only; a workflow the cloud agent or CLI must run lives under `.github/skills/`.)
+
 ## Reference docs (full detail)
+
+- `docs/ai-context/PROJECT.md` — current truth · `docs/ai-context/LEARNINGS.md` — decisions, failures, corrections · `docs/<AREA>_BACKLOG.md` — deferred work
 
 - `docs/ARCHITECTURE.md` — module graph, app entry points, dependency injection
 - `docs/BUILD_SYSTEM.md` — schemes, configurations, xcconfig overlays, signing strategy

@@ -1,0 +1,23 @@
+// lint-fix.mjs — postToolUse hook (Pattern 4). Runs the auto-fix linter on the file just
+// edited. ALWAYS allows; lint must never block. Prefer editor format-on-save if you have it.
+import { spawnSync } from "node:child_process";
+import { readPayload, field, out } from "./hook-io.mjs";
+
+// ---- Customise ---------------------------------------------------------------
+const LINTABLE_RE = /\.swift$/;                                   // iOS pre-fill
+const LINT_COMMAND = (file) => ["swiftformat", file];             // or: ["swiftlint", "--fix", file]
+// Prefer Xcode / VS Code format-on-save or a pre-commit hook if you already have one; then leave this hook out.
+const EDIT_TOOLS = /edit|write|apply_patch|create_file|replace/i;
+// ------------------------------------------------------------------------------
+
+try {
+  const p = readPayload();
+  const tool = String(field(p, "tool_name", "toolName") ?? "");
+  const input = field(p, "tool_input", "toolArgs") ?? {};
+  const file = String(input.file_path ?? input.filePath ?? input.path ?? "");
+  if (EDIT_TOOLS.test(tool) && LINTABLE_RE.test(file)) {
+    const [cmd, ...args] = LINT_COMMAND(file);
+    spawnSync(cmd, args, { encoding: "utf8", timeout: 45_000 });
+  }
+} catch {}
+out({});

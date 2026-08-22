@@ -24,13 +24,13 @@ Report:
 For each `.github/instructions/*.instructions.md`:
 1. Read the `applyTo:` glob
 2. Run `find . -path '<glob>' | head -10` (or equivalent) — does it actually match files in the project today?
-3. Check the file's body length — is it within the ~3,000 char code-review cap?
+3. Check the file's body length — is it well inside the documented budget (about two pages / ~1,000 lines per file; the old "4,000 characters" cap is no longer on the docs)? The framework's own guidance is ≤ 150 lines.
 4. Check for overlapping globs across instruction files
 
 Report:
-- **Healthy globs** (matches real files, under cap, no overlap)
+- **Healthy globs** (matches real files, inside the budget, no overlap)
 - **Stale globs** (matches no files — project layout changed; propose new glob or removal)
-- **Overweight files** (> 3,000 chars; propose split)
+- **Overweight files** (> 150 lines; propose split)
 - **Overlapping globs** (two files would both auto-load on the same edits; propose consolidation)
 
 ### A3. `copilot-instructions.md` length audit
@@ -80,14 +80,35 @@ In the last 30 days of PRs / issues / Crashlytics top issues / App Store rejecti
 
 Propose each as a one-line patch to the appropriate instruction file.
 
-### A8. Slash prompt audit
+### A8. Skill + prompt-file audit
 
-For each `.github/prompts/*.prompt.md`:
-- Is it being invoked? How often?
-- Does the workflow still match the team's actual git / CI / release flow?
-- Any new repeatable workflow worth a new slash prompt?
+For each `.github/skills/*/SKILL.md` and each `.github/prompts/*.prompt.md`:
+- Is it being invoked? How often? Is any skill auto-loading on unrelated tasks (vague `description`)?
+- Does the workflow still match the team's actual git / CI / release flow (Fastlane lanes, scheme names)?
+- Is any workflow the cloud agent or the CLI needs still a prompt file only (IDE-only)? → propose converting it to a skill
+- A skill and a prompt file with the same name? → keep one
+- Any new repeatable workflow worth a new skill?
 
 Propose additions / modifications / removals.
+
+### A9. Platform drift (v1.1.0)
+
+The platform moves under the framework's conventions (Pitfall 23). Re-read the official pages for custom agents, Agent Skills, hooks and the Copilot CLI, and diff them against what this project's agents, instruction files, skills and `docs/ai-context/HOOKS.md` assume. Three claims this framework itself made in v1.0 are now retracted — check the project has not inherited them:
+
+- "Copilot has no hooks" — it does (`.github/hooks/*.json`; `preToolUse` can deny, `agentStop` can block). Is the `xcodebuild` build-gate or correction-capture still living only in a pre-commit hook or an IDE setting because of the old claim?
+- "Cross-agent invocation has no allowlist" — VS Code's `agents:` is one; the cloud agent still has none. Does the orchestrator declare `agents:` with the exact specialist names? Does any specialist (it should not)?
+- "Prompt files are the Copilot equivalent of skills" — they are IDE-only; Agent Skills are cross-surface. Is any workflow the cloud agent or CLI needs still a prompt file only?
+
+Also check: no `.chatmode.md` files remain (retired → `.agent.md`); agent files use the `.agent.md` suffix; the instruction-file size guidance quoted anywhere is the current one (about 2 pages / ~1,000 lines, not "4,000 characters"); any `copilot -p` delegation runs from the repo directory (no `--cwd`) and is granted the tools it needs; if hooks are installed, the `agentStop` `timeoutSec` is still above `stop-gate.mjs`'s `BUILD_CAP_MS` and both still exceed a cold `xcodebuild` on the slowest CI box. Report each stale assumption with the doc URL that contradicts it. Where the docs say nothing, write "not documented" — never guess.
+
+### A10. Project-truth freshness (v1.1.0)
+
+- `docs/ai-context/PROJECT.md` §3: is every row's environment state still true — App Store version/build, latest TestFlight build, backend per environment, flags? Diff against the changelog and App Store Connect since the header's verified-on date; re-stamp the header after fixing.
+- `docs/ai-context/LEARNINGS.md`: any §D correction that has been violated in the last month despite being written down? That is the signal to promote it to a hook (Chapter 10).
+- Backlogs: any `docs/*_BACKLOG.md` item older than a quarter with no revisit signal → propose archive or delete. Any "later" in recent PR descriptions that never reached a backlog?
+- Glossary: any new name for an existing concept introduced since the last pass (a model field, an API field and a screen label for the same thing)?
+- The engineering skill (`.github/skills/<project-slug>-engineering/SKILL.md`): is it still loading (appears under `/` in chat; used by the cloud agent)? Are reports still tagging claims with the confidence classes?
+- If the app is a consumer of API repos in a workspace (Chapter 13): is `CONTRACTS.md` still true, and is every shared Swift package pinned by tag, not branch, in `Package.swift`?
 
 ## Phase B — Propose changes (NO writes yet)
 
@@ -99,9 +120,11 @@ Output the audit as a single proposal block:
 |---|---|---|---|---|
 | 1 | Remove `ios-watch` specialist | `.github/agents/ios-watch.md` | 0 invocations in 90 days; project doesn't ship watchOS | Low |
 | 2 | Tighten `swiftui.instructions.md` `applyTo:` from `Sources/**/*.swift` to `Sources/Views/**/*.swift,Sources/**/*View.swift` | `.github/instructions/swiftui.instructions.md` | Current glob over-fires on non-view files, polluting context | Low |
-| 3 | Split `swiftui.instructions.md` (currently 4,200 chars) into rendering + state + accessibility | `.github/instructions/swiftui-*.instructions.md` (3 files) | Over the 3k char code-review cap; review never sees the back half | Med |
+| 3 | Split `swiftui.instructions.md` (currently 310 lines) into rendering + state + accessibility | `.github/instructions/swiftui-*.instructions.md` (3 files) | Well past the 150-line guidance; the rules that matter are buried | Med |
 | 4 | Add Hard rule to `concurrency.instructions.md`: *"async functions returning to UI use `await MainActor.run { }` or `Task { @MainActor in }`"* | `.github/instructions/concurrency.instructions.md` | 4 PR review hits this month for missing main-thread switch | Low |
 | 5 | Archive `docs/ai-context/visionos-companion-plan.md` | `docs/_archive/<YYYY-MM>/` | We decided not to ship visionOS; doc is now historical | Low |
+| 6 | Convert `.github/prompts/verify-build.prompt.md` to `.github/skills/verify-build/SKILL.md` | `.github/skills/verify-build/SKILL.md` | The nightly `copilot -p` test triage cannot load a prompt file (IDE-only) | Low |
+| 7 | Re-stamp `PROJECT.md` §3 — App Store is 4.2 (812), table says 4.1 | `docs/ai-context/PROJECT.md` | State claim older than the last release | Low |
 | ... | ... | ... | ... | ... |
 
 For each row, include:
@@ -126,7 +149,7 @@ After all approved changes are applied:
 1. Suggest a commit:
    ```bash
    git add .github/ docs/ai-context/ docs/_archive/
-   git commit -m "chore: refinement pass — <count> changes (specialists, globs, instructions)"
+   git commit -m "chore: refinement pass — <count> changes (specialists, globs, instructions, skills, project truth)"
    ```
 2. Suggest opening a PR with the audit summary as the description so reviewers see the rationale
 

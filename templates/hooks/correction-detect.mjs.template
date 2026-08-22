@@ -1,0 +1,27 @@
+// correction-detect.mjs — userPromptSubmitted hook (Pattern 2, first half).
+// Detects a strong correction signal in the user's prompt and raises a flag that
+// stop-gate.mjs turns into a block. Never blocks anything itself. Fail-silent.
+import { readPayload, field, setFlag, stripQuoted, out } from "./hook-io.mjs";
+
+// Rule 11 — anchored. Bare `you already` once matched "you already have access".
+const STRONG_CORRECTION_PATTERNS = [
+  /\b(that'?s|that\s+is|you'?re|this is)\s+(wrong|incorrect|not\s+right|not\s+correct)\b/i,
+  /\bnot\s+(what|how)\s+I\s+(asked|wanted|said)\b/i,
+  /\byou\s+(forgot|missed|skipped|ignored)\b/i,
+  /\byou\s+already\s+(did|changed|broke|said|told|made|wrote|removed|deleted)\b/i,
+  /\bI\s+(just|already)\s+(told|said|asked)\s+you\b/i,
+  /\bI\s+told\s+you\s+(not\s+to|to\s+not)\b/i,
+  /\b(stop|don'?t)\s+(doing|using|writing|making|creating)\b/i,
+  /\bwhy\s+did\s+you\s+(use|do|write|make|create)\b/i,
+  /^\s*(no[,.!]|wrong[,.!]|incorrect[,.!])/i,
+  /\binstead\s+of\s+([\w/.\-]+\s+){0,4}use\b/i,
+  /\byou\s+(keep|always)\s+(doing|using|writing|making|ignoring|missing|forgetting|do|use|write|make|ignore|miss|forget)\b/i,
+  /\bthat'?s\s+not\s+what\s+I\s+(meant|wanted|asked)\b/i,
+];
+
+try {
+  const p = readPayload();
+  const text = stripQuoted(field(p, "prompt", "prompt"));
+  if (STRONG_CORRECTION_PATTERNS.some((re) => re.test(text))) setFlag("correction-pending");
+} catch {}
+out({});

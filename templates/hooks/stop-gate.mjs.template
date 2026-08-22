@@ -1,0 +1,60 @@
+// stop-gate.mjs — the ONE agentStop hook. Ordered checks: correction-capture →
+// build-gate → doc-freshness. First block wins. Loop-guarded. Output: JSON on stdout.
+import { spawnSync } from "node:child_process";
+import { readPayload, field, hasFlag, clearFlag, readState, writeState, out } from "./hook-io.mjs";
+
+// ---- Customise ---------------------------------------------------------------
+// iOS pre-fills. Keep <WORKSPACE> / <SCHEME> as placeholders until bootstrap fills them.
+const BUILD_RELEVANT_RE = /^(Sources|Tests)\/.+\.(swift|m|mm|h)$|\.xcodeproj\/|\.xcworkspace\/|Package\.swift|Podfile/;
+const BUILD_COMMAND = ["xcodebuild", "-workspace", "<WORKSPACE>.xcworkspace", "-scheme", "<SCHEME>",
+                       "-destination", "generic/platform=iOS Simulator", "build"];
+// Swap "-workspace", "<WORKSPACE>.xcworkspace" for "-project", "<PROJECT>.xcodeproj" on a project-only repo.
+// Never `archive` (needs signing material) and never `test` (too slow for a gate — tests belong in tests_run + CI).
+// Concurrent sessions on one checkout: add "-derivedDataPath", "<PER_SESSION_PATH>" or builds collide (Pitfall 29).
+const BUILD_CAP_MS = 20 * 60 * 1000;   // 20 min — xcodebuild on a busy CI box is slow. MUST be below the hook's
+                                       // timeoutSec in hooks.json (1500 s): timeouts fail OPEN, so if the hook
+                                       // timer is the lower one the gate silently allows exactly when the build is slow.
+const CHANGELOG_PATH = "<CHANGELOG_PATH>";
+const STATE_DOC_PATH = "<STATE_DOC_PATH>";              // e.g. "docs/ai-context/PROJECT.md"
+// ------------------------------------------------------------------------------
+
+function allow() { out({ decision: "allow" }); process.exit(0); }
+function block(reason) { out({ decision: "block", reason }); process.exit(0); }
+
+function dirtyRelevant() {
+  const r = spawnSync("git", ["status", "--porcelain"], { encoding: "utf8" });
+  if (r.status !== 0) return [];
+  return r.stdout.split("\n").filter(Boolean).map((l) => l.slice(3).trim()).filter((f) => BUILD_RELEVANT_RE.test(f));
+}
+
+try {
+  const p = readPayload();
+  if (field(p, "stop_hook_active", "stopHookActive") === true) allow();   // Rule 4
+
+  // Pattern 2 — correction pending?
+  if (hasFlag("correction-pending")) {
+    clearFlag("correction-pending");
+    block("Correction detected in the user's last message. Before finishing: was this a correction on a RECURRING domain pattern? If yes, draft a one-line patch to the right .github/instructions/<file>.instructions.md (Hard rules or What NOT to do), name the file, and ask for approval. If it was a one-off, say so briefly. Never say 'I'll remember' — memory is not an instruction file.");
+  }
+
+  // Pattern 3 — build gate
+  const dirty = dirtyRelevant();
+  if (dirty.length) {
+    const r = spawnSync(BUILD_COMMAND[0], BUILD_COMMAND.slice(1), { encoding: "utf8", timeout: BUILD_CAP_MS, env: { ...process.env, CI: "1" } });
+    const timedOut = r.status === null;                   // Rule 9: killed = inconclusive, allow
+    if (!timedOut && r.status !== 0) {
+      const tail = ((r.stderr || r.stdout || "").trim()).slice(-4000);
+      block(`\`${BUILD_COMMAND.join(" ")}\` failed with ${dirty.length} dirty build-relevant file(s) (${dirty.slice(0, 6).join(", ")}${dirty.length > 6 ? "…" : ""}). Fix the build before finishing.\n\n${tail}`);
+    }
+  }
+
+  // Pattern 5 — doc freshness
+  const s = readState();
+  if (s.lastProdPush && !(s.lastChangelogEdit > s.lastProdPush)) {
+    writeState({ lastProdPush: 0 });                      // one block per push; loop guard covers the retry
+    block(`DOC-FRESHNESS GATE — a production push happened this session but ${CHANGELOG_PATH} was not updated afterwards. Before finishing, update the FULL doc set for what shipped: (1) ${CHANGELOG_PATH} — the release entry; (2) the affected docs/ai-context/*.md orientation map(s); (3) any affected .github/instructions/*.instructions.md; (4) ${STATE_DOC_PATH} §3 (what is live where) if production STATE changed. A future agent sees only what is in git. If no production push actually occurred, say so and finish.`);
+  }
+} catch (e) {
+  process.stderr.write(`[stop-gate] ${e?.message ?? e}\n`);
+}
+allow();

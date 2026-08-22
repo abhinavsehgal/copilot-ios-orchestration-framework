@@ -1,4 +1,6 @@
 ---
+# File: .github/agents/<SPECIALIST_NAME>.agent.md  (`.agent.md` is the current suffix; bare `.md` still loads)
+# No `agents:` field — a review-only agent never invokes another agent.
 name: <SPECIALIST_NAME>
 description: REVIEW-ONLY <DOMAIN> specialist for <PROJECT_NAME>. Audits + flags risks. Has NO Edit/Write tools — humans/specialists make changes.
 tools: Read, Grep, Glob, Bash

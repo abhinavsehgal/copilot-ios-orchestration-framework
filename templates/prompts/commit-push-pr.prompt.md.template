@@ -1,4 +1,5 @@
 ---
+# IDE-only prompt-file form (v1.0). The cross-surface AGENT SKILL that supersedes it — cloud agent, CLI and every IDE — is templates/skills/commit-push-pr/SKILL.md.template.
 description: Validate → commit → push → open/update PR against <DEFAULT_BASE_BRANCH>. Enforces iOS golden rules at the slash-prompt boundary so daily commits stay safe.
 ---
 

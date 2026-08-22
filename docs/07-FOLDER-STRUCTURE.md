@@ -31,13 +31,16 @@ iOS examples:
 | File | Covers |
 |---|---|
 | `INDEX.md` | The router — every task type → which orientation maps to read + which specialist to invoke |
+| `PROJECT.md` | Current truth (v1.1): what is live on the App Store / TestFlight / backend, what CI does NOT do, sources of truth, verified commands — date-stamped ([`12-PROJECT-TRUTH-AND-LEARNINGS.md`](12-PROJECT-TRUTH-AND-LEARNINGS.md)) |
+| `LEARNINGS.md` | Decisions, failed approaches, recurring bug patterns, agent corrections (v1.1) |
+| `GLOSSARY.md` | One name per concept — a rule file, not a nicety (v1.1) |
 | `swiftui-patterns.md` | Your project's SwiftUI conventions: state ownership, view composition, modifier order |
 | `coredata-schema.md` | Schema versions, migration policy, where contexts live, naming conventions |
 | `networking-architecture.md` | Endpoint definitions, auth refresh, retry/backoff, cert pinning policy |
 | `release-process.md` | Branch → TestFlight → App Store flow, version-bumping policy, who approves what |
 | `accessibility-baseline.md` | What "accessible enough to ship" means for this app (Dynamic Type XL, VoiceOver baseline) |
 | `info-plist-policy.md` | Required usage descriptions, ATT prompt timing, third-party SDK manifests |
-| `ORCHESTRATION_SPOONFEEDER.md` | Human-readable how-to-use for the team (copy-paste examples for slash prompts, agent invocations) |
+| `ORCHESTRATION_SPOONFEEDER.md` | Human-readable how-to-use for the team (copy-paste examples for skills, agent invocations) |
 | `HANDOFF_SCHEMA.md` | The bidirectional contract (drop-in from `templates/HANDOFF_SCHEMA.md.template`) |
 
 Each orientation map should:
@@ -104,5 +107,6 @@ A `context-librarian` specialist (one of the optional iOS specialists you can ad
 ## Cross-links
 
 - [`02-ARCHITECTURE.md`](02-ARCHITECTURE.md) — the `.github/` side of the same picture
-- [`08-IOS-COMMON-PITFALLS.md`](08-IOS-COMMON-PITFALLS.md) § Pitfall 14 (*"Letting `docs/` rot without a librarian"*)
-- The `templates/INDEX.md.template`, `templates/SPOONFEEDER.md.template`, `templates/HANDOFF_SCHEMA.md.template`, `templates/archive-README.md.template`
+- [`08-IOS-COMMON-PITFALLS.md`](08-IOS-COMMON-PITFALLS.md) § Pitfall 6 (*"Letting `docs/` rot without a librarian"*), § Pitfall 26 (a production push that does not freshen the docs)
+- [`12-PROJECT-TRUTH-AND-LEARNINGS.md`](12-PROJECT-TRUTH-AND-LEARNINGS.md) — `PROJECT.md`, `LEARNINGS.md`, `GLOSSARY.md` and the per-area backlogs (`docs/<AREA>_BACKLOG.md`, tier 2)
+- The `templates/INDEX.md.template`, `templates/SPOONFEEDER.md.template`, `templates/HANDOFF_SCHEMA.md.template`, `templates/archive-README.md.template`, and (v1.1) `templates/PROJECT.md.template`, `LEARNINGS.md.template`, `GLOSSARY.md.template`, `BACKLOG.md.template`

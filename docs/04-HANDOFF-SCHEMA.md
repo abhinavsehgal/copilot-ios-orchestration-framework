@@ -145,6 +145,45 @@ Orchestrator aggregates both and reports done.
 
 **Hop limit:** soft cap of 5 hops. If you hit hop 5, escalate to user — the task is bigger than the orchestrator initially modeled.
 
+## Optional fields added in v1.1.0 (additive — `schema_version` stays 1)
+
+**Outbound**, for multi-repo workspaces ([`13-MULTI-REPO-WORKSPACES.md`](13-MULTI-REPO-WORKSPACES.md)) — omit in single-repo projects:
+
+```yaml
+  repo: <repo name from workspace.json — the ONLY repo this handoff may edit, e.g. ios-app>
+  contract_impact:
+    level: <none | additive | breaking>
+    contracts: [<names from CONTRACTS.md — an API spec, or a shared Swift package>]
+    consumers_to_update: [<repo names — required when level != none>]
+```
+
+**Outbound**, any project — the evidence-confidence class from [`12-PROJECT-TRUTH-AND-LEARNINGS.md`](12-PROJECT-TRUTH-AND-LEARNINGS.md) may be used in place of the
+three-value `confidence:` on a claim (`verified-code` / `verified-schema` / `verified-test` /
+`verified-git` / `documented-unverified` / `historical` / `unknown`). Specialists treat anything
+that is not `verified-*` exactly as they treat `confidence: low`. An `Info.plist` key you read is
+`verified-schema`; a key an instruction file *says* is there is `documented-unverified`.
+
+**Inbound**, for multi-repo workspaces:
+
+```yaml
+  contracts_changed:
+    - contract: <name>
+      change: <one line>
+      backward_compatible: <true | false>
+      consumers_grepped: [<repo>:<path>, …]   # e.g. ios-app:Sources/Networking/OrderResponse.swift
+```
+
+**Inbound**, any project — `deferred_work:` lists anything the specialist is *not* doing that
+someone must (each item with the backlog file it was appended to). A return that names deferred work
+without a backlog path is incomplete (Chapter 12).
+
+## Versioning
+
+- `schema_version: 1` is current.
+- Additive changes (new optional fields) keep version 1.
+- Breaking changes (renaming fields, changing field semantics) bump the version.
+- Bumps require updating HANDOFF_SCHEMA.md, the orchestrator, and every specialist file in the same PR.
+
 ## Cross-links
 
 - [`03-IOS-SPECIALISTS-GUIDE.md`](03-IOS-SPECIALISTS-GUIDE.md) — who each specialist is, when to delegate to them
