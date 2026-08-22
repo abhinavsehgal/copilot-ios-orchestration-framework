@@ -1,0 +1,113 @@
+---
+# File: .github/skills/correction-capture/SKILL.md — an AGENT SKILL (cross-surface). With the v1.1 hooks installed
+# (docs/10 Pattern 2) this runs automatically at agentStop; keep the skill for surfaces without hooks and for manual use.
+name: correction-capture
+description: After the user corrects the assistant, decide whether the lesson is a RECURRING domain pattern and, if so, draft a one-line patch to the right .github/instructions/<file>.instructions.md for approval. Use immediately after any correction. Never "I'll remember".
+---
+
+# /correction-capture
+
+> **Invocation.** In Copilot Chat (any surface), type `/correction-capture` immediately after the user issues a correction. Replaces the "I'll remember next time" reflex with a concrete instruction-file patch the user can approve or reject.
+>
+> **Why this exists.** Corrections that live only in conversation are re-issued next session. As of v1.1 the `userPromptSubmitted` + `agentStop` hooks (docs/10 Pattern 2) trigger this discipline automatically; this skill is the manual / hook-less path and the wording the hook's block reason points at.
+
+## When to invoke
+
+- The user just corrected a mistake on a recurring domain pattern (e.g. "you called `viewContext.save()` from a background task again — use `performBackgroundTask` and merge")
+- The user said "I told you", "you forgot", "stop doing X", "instead of X use Y", "again", "you keep doing this", or similar explicit-correction phrasing
+- A code review surfaced a pattern that wasn't caught by the existing `.github/instructions/*` files
+
+## When NOT to invoke
+
+- The correction was a one-off context-specific request ("for this file, use Y" — not a recurring rule)
+- The correction was about a typo or minor wording — those don't need to harden into instructions
+- The "rule" already exists in an `.github/instructions/*.instructions.md` file — instead, run `/inventory` to find the existing rule and ask why it didn't apply
+
+## Inputs
+
+- `${input:correction:What did the user just correct? Quote their exact words.}`
+- `${input:violated_pattern:What pattern did the assistant violate? (e.g. "saved the viewContext off the main thread")}`
+- `${input:scope:Which files/paths does this pattern apply to? (used to set the applyTo: glob)}`
+
+## Workflow
+
+### 1. Decide if this is a recurring pattern
+
+Look at the correction:
+- Is it the **first time** this kind of correction has been issued on this codebase? → Less urgent. Note it; if it repeats once more, escalate to a real instruction-file patch.
+- Is it the **second or later time**? → Definitely a rule. Proceed to Step 2.
+- Is it about a one-off file or context? → Not a rule. Acknowledge and stop.
+
+If unsure, prefer to draft the patch — adding an unnecessary instruction is cheaper than skipping a needed one.
+
+### 2. Find the right instruction file
+
+Search `.github/instructions/` for an existing file whose `applyTo:` glob matches the scope (`swiftui`, `concurrency`, `coredata`, `networking`, `info-plist`, `code-signing`, …). Three outcomes:
+
+**Existing matching file** — patch in place. Add a new "Hard rule" or "What NOT to do" entry under the right heading, citing the violated pattern.
+
+**No matching file** — propose a new instruction file. Filename should be domain-named (e.g. `logging.instructions.md`, `deeplinks.instructions.md`, `push.instructions.md`). Set `applyTo:` to the broadest glob that captures the pattern (don't over-narrow).
+
+**File matches but `applyTo:` is wrong** — propose updating the glob. Cite the path that wasn't matched and the new glob that would have caught it.
+
+### 3. Draft the patch
+
+A good rule patch looks like:
+
+```markdown
+### <SHORT_IMPERATIVE_TITLE>
+
+**Why:** <ONE_SENTENCE_REASON — usually the correction the user just made, or the past incident the rule prevents>
+
+**How to apply:** <2-4 SENTENCES — what to do instead, what helper to use, what to check before committing>
+```
+
+A patch under "What NOT to do" looks like:
+
+```markdown
+- Don't <TEMPTING_WRONG_THING> — <ONE_SENTENCE_REASON>. Use <CORRECT_THING> instead.
+```
+
+Pick the format that matches the file's existing style.
+
+### 4. Show the proposed patch to the user
+
+Format:
+
+```
+**Proposed patch — `.github/instructions/<file>.instructions.md`**
+
+Section: `<HEADING>` (Hard rules / What NOT to do)
+
+<PATCH_TEXT>
+
+Apply? (yes / edit / skip)
+```
+
+Wait for user approval. Do NOT silently apply patches to instruction files without explicit `yes` — they're checked into git and shipped with the project.
+
+### 5. Apply or skip
+
+- **yes** → write the patch to the instruction file. Verify the file still parses (frontmatter intact, ≤ 150 lines). Show the diff.
+- **edit** → take the user's revised version and apply.
+- **skip** → acknowledge briefly and stop. Do not silently lose the lesson — note in the chat that the user declined and ask whether to add it to a backlog of "considered but not codified" patterns.
+
+## Definition of Done
+
+1. **Decision logged**: was this codified, deferred, or rejected? (One line at the end of the chat.)
+2. **If codified**: instruction-file diff shown, file written, user shown the result.
+3. **No assistant memory claims**: the assistant did NOT say "I'll remember" or "I'll be careful next time" — those phrases are forbidden output of this prompt.
+4. **Instruction files that applied** to the file the violation occurred in (so the user can see whether the existing rule should have caught it).
+
+## Hard NOs
+
+- Never silently apply an instruction-file patch without explicit user `yes`
+- Never patch a file that is already near the documented size budget (about two pages; the old "code review reads only the first 4,000 characters" sentence is no longer on the docs) without first showing the user the line count and asking whether to split into a separate file
+- Never overwrite or rewrite an existing instruction without preserving its history (additions only, unless the user explicitly accepts a rewrite)
+- Never use the words "I'll remember" / "I'll keep that in mind" / "noted" — replace with the patch or with explicit "this isn't a recurring rule, declining to codify"
+
+## Cross-links
+
+- `docs/10-MECHANICAL-ENFORCEMENT.md` — why this prompt exists in lieu of a Copilot Stop hook
+- `docs/05-INSTRUCTIONS-AND-PROMPTS.md` — the `applyTo:` glob conventions
+- `templates/instructions/*.instructions.md.template` — the file shapes this skill patches into

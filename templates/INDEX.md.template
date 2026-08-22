@@ -7,10 +7,11 @@
 ## How to use
 
 1. Restate the task in plain words.
-2. Skim "Task type → Read this" below.
-3. Read ONLY the listed orientation maps (each ~50-150 lines).
-4. Check matching `.github/instructions/*.instructions.md` (auto-loaded by `applyTo:`).
-5. If medium/complex, hand to `@<PROJECT_SLUG>-orchestrator`.
+2. Read `PROJECT.md` §3 (what is live on the App Store / TestFlight / backend) and skim `LEARNINGS.md` §D (agent corrections).
+3. Skim "Task type → Read this" below.
+4. Read ONLY the listed orientation maps (each ~50-150 lines).
+5. Check matching `.github/instructions/*.instructions.md` (auto-loaded by `applyTo:`).
+6. If medium/complex, hand to `@<PROJECT_SLUG>-orchestrator`.
 
 ---
 
@@ -26,6 +27,7 @@
 | Info.plist / entitlements / ATT / nutrition labels | `info-plist-policy.md` | `info-plist.instructions.md` | `<PROJECT_SLUG>-ios-privacy` (REVIEW-ONLY) |
 | Performance / Instruments / Crashlytics | `performance-baseline.md` | `concurrency.instructions.md` | `<PROJECT_SLUG>-ios-perf` |
 | Background tasks / silent push / lifecycle | `background-tasks.md` | `info-plist.instructions.md` (BG identifiers) | `<PROJECT_SLUG>-ios-bg` |
+| What is live where / past decisions / vocabulary / deferred work | `PROJECT.md` · `LEARNINGS.md` · `GLOSSARY.md` · `docs/<AREA>_BACKLOG.md` | — | — |
 | Cross-domain feature, multi-step | (this file + `ORCHESTRATION_SPOONFEEDER.md`) | varies | `<PROJECT_SLUG>-orchestrator` |
 | Bidirectional handoff format | `HANDOFF_SCHEMA.md` | n/a | orchestrator (issuer) + specialists (receivers) |
 

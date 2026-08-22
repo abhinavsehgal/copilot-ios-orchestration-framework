@@ -12,7 +12,7 @@ This matters because:
 - It works in every Copilot surface (VS Code, Xcode, JetBrains, Visual Studio, GitHub.com Chat, Cloud Agent)
 - It's fully transparent — you can read every rule
 - It's reversible — delete `.github/` and you're back to default Copilot
-- Hard runtime enforcement (where it exists in Copilot — `tools:` allowlists, `target:` scopes) layers on top
+- Hard runtime enforcement (where it exists in Copilot — `tools:` allowlists, `target:` scopes, and since v1.1 the `.github/hooks/*.json` lifecycle hooks of Chapter 10) layers on top
 
 ## 2. Each specialist runs with focused tool scope
 
@@ -75,7 +75,7 @@ Everything else is **documentation discipline** — the agent follows its instru
 - "Read the right instruction file before editing"
 - Definition of Done completeness
 
-Don't conflate the two layers. When you say *"the orchestrator can only delegate to project specialists,"* that's documentation in Copilot (no runtime allowlist for cross-agent invocation in current versions). When you say *"the `ios-privacy` agent cannot edit files,"* that IS runtime-enforced via the `tools:` field.
+Don't conflate the two layers. When you say *"the orchestrator can only delegate to project specialists,"* that's enforced in VS Code by the orchestrator's `agents:` allowlist and documentation-only on the cloud agent, which ignores the field (verified 2026-08-22 — v1.0 of this sentence said there was no allowlist anywhere; see Chapter 3). When you say *"the `ios-privacy` agent cannot edit files,"* that IS runtime-enforced via the `tools:` field.
 
 ## 6. Three-tier documentation
 

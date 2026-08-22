@@ -1,0 +1,13 @@
+{
+  "_comment": "Open THIS file in VS Code (File → Open Workspace from File). The workspace root is folder 0 so its .github/ (router, orchestrator, contract instructions) loads; each child folder contributes its OWN .github/ (agents, instructions, skills, hooks) — VS Code discovers customizations per workspace folder. Keep the folder list in sync with workspace.json.",
+  "folders": [
+    { "name": "<WORKSPACE_SLUG>", "path": "." },
+    { "name": "<REPO_1_NAME>", "path": "<REPO_1_PATH>" },
+    { "name": "<REPO_2_NAME>", "path": "<REPO_2_PATH>" }
+    // e.g. { "name": "ios-app", "path": "ios-app" }, { "name": "orders-api", "path": "services/orders-api" }
+  ],
+  "settings": {
+    "chat.subagents.allowInvocationsFromSubagents": true,
+    "chat.useAgentsMdFile": true
+  }
+}

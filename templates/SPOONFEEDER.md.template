@@ -35,7 +35,7 @@ You stay in the Chat thread; the orchestrator drives.
 /commit-push-pr
 ```
 
-The slash prompt will:
+The skill (works in the IDE, on the cloud agent and from `copilot -p`) will:
 - Verify branch is not `main` / `develop`
 - Run the build (if any iOS-build-relevant files are dirty)
 - Refuse to stage `.cer` / `.p12` / `.mobileprovision` / `.env*`
@@ -64,7 +64,7 @@ The prompt walks Copilot through deciding whether the lesson is recurring enough
 
 ---
 
-## Agent + slash prompt cheat sheet
+## Agent + skill cheat sheet
 
 | Want to … | Use |
 |---|---|

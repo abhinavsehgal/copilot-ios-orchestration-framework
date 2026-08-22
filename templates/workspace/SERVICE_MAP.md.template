@@ -1,0 +1,15 @@
+# <WORKSPACE_NAME> — Service Map (verified <YYYY-MM-DD>)
+
+> Which repo owns what, what it produces, what it consumes, and which orchestrator to delegate to.
+> Derived from code by `service-mapper`; every row cites its evidence. Re-verify quarterly.
+
+| Repo (workspace.json name) | Path | Owns (bounded context) | Produces | Consumes | Orchestrator | Evidence |
+|---|---|---|---|---|---|---|
+| `<REPO_1_NAME>` (e.g. `ios-app`) | `<REPO_1_PATH>` | the iOS app | — | `<contract>` | `<REPO_1_NAME>-orchestrator` | `<repo>:<path>:<line>` |
+| `<REPO_2_NAME>` (e.g. `orders-api`) | `<REPO_2_PATH>` | <capability> | `<contract>` | — | `<REPO_2_NAME>-orchestrator` | `<repo>:<path>:<line>` |
+
+## Ownership rules of thumb
+
+- A capability has exactly ONE owning repo. If two repos both "own" it, that is the first bug.
+- A repo's `PROJECT.md` §3 (what is live where) is the authority on whether its producer change is
+  deployed — never the git log.

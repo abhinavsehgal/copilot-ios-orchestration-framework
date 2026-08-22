@@ -44,9 +44,12 @@ Look for:
 **Existing Copilot config:**
 - `.github/copilot-instructions.md` (size + last modified)
 - `.github/instructions/*.instructions.md`
+- `.github/skills/*/SKILL.md`
 - `.github/prompts/*.prompt.md`
-- `.github/agents/*.md`
-- `.github/chatmodes/*.chatmode.md`
+- `.github/agents/*.agent.md` (and bare `*.md`)
+- `.github/hooks/*.json`
+- `.github/chatmodes/*.chatmode.md` (retired — flag for rename to `.agent.md`)
+- `docs/ai-context/PROJECT.md`, `LEARNINGS.md`, `GLOSSARY.md`, `docs/*_BACKLOG.md` (does a project-truth set already exist?)
 
 **Documentation tier signals:**
 - `docs/` contents — count files, list them

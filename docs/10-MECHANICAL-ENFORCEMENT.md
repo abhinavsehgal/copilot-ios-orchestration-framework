@@ -1,122 +1,248 @@
-# 10 — Mechanical Enforcement (and what to use instead)
+# 10 — Mechanical Enforcement (hooks, skills, and what still needs discipline)
 
-GitHub Copilot does not expose programmable lifecycle hooks. There is no `PreToolUse` / `PostToolUse` / `Stop` event you can wire a script to. If you've come from another harness expecting hook-based enforcement, here's how the iOS framework achieves the same outcomes through different means.
+> **Rewritten for v1.1.0.** The v1.0 version of this chapter opened with *"GitHub Copilot does not
+> expose programmable lifecycle hooks. There is no `PreToolUse` / `PostToolUse` / `Stop` event you
+> can wire a script to."* That was true when written and is **false now**: Copilot has hooks on the
+> cloud agent, the Copilot CLI and VS Code. Every platform fact below was verified against the
+> official hooks reference and the VS Code hooks page on **2026-08-22**. Re-verify quarterly
+> (Pitfall 23 — the platform moves under your conventions).
 
-## Translation table
+This chapter is **optional**. Skip it until you have concrete evidence that documentation
+discipline is being skipped under real-world pressure: the same correction repeated across
+sessions, bugs shipping despite an instruction-file rule that forbade them, `xcodebuild` skipped on
+commits that touched `Sources/`, a TestFlight or App Store push with stale docs behind it. Then come
+back.
 
-| Hook pattern (other harnesses) | iOS Copilot equivalent | Quality |
+---
+
+## What Copilot actually offers (verified 2026-08-22)
+
+| Surface | Mechanism | Where |
 |---|---|---|
-| PreToolUse rule-surfacing | `applyTo:` frontmatter on `.github/instructions/<NAME>.instructions.md` | **Native and strict** — Copilot auto-loads matching files. Can't fail silently. |
-| Stop correction-capture | `/correction-capture` slash prompt (manually invoked) | **Partial** — Copilot has no Stop event, so the prompt must be invoked explicitly after a correction. |
-| Stop build-gate | `ios-release` agent's Definition of Done + `/verify-build` slash prompt | **Partial** — no automatic trigger. Enforcement lives in agent instructions ("the build must be green before claiming done") and a prompt the orchestrator runs as the last step. |
-| PostToolUse lint-fix on edit | IDE auto-fix (Xcode "Format on Save", VS Code Swift format) + pre-commit hook (e.g. SwiftLint, SwiftFormat) | **Out of scope.** This belongs in IDE config or pre-commit, not in Copilot's surface. |
+| Declarative rule loading | `.github/instructions/*.instructions.md` with `applyTo:` globs — auto-loaded when a matching file is in play | All surfaces |
+| Lifecycle hooks | `.github/hooks/*.json` — events `sessionStart`, `sessionEnd`, `userPromptSubmitted`, `preToolUse`, `postToolUse`, `postToolUseFailure`, `agentStop`, `subagentStart`, `subagentStop`, `errorOccurred`, `preCompact`, `permissionRequest`, `notification` | Cloud agent (reads only `.github/hooks/*.json`; `bash`/`command` fields only) · Copilot CLI (all events; also `~/.copilot/hooks/`) · VS Code (reads `.github/hooks/*.json` **and** a Claude-style `.claude/settings.json`) |
+| Skills | `.github/skills/<name>/SKILL.md` — invoked as `/name` or auto-loaded by relevance | Cloud agent, code review, CLI, VS Code, JetBrains |
+| Prompt files | `.github/prompts/*.prompt.md` | IDEs only — not the cloud agent, not the CLI |
 
-The takeaway: Copilot's design favors **declarative auto-loading** over imperative event hooks. Two of the four patterns translate cleanly; one is partial; one belongs elsewhere.
+### The hook contract (the part you must get right)
 
-## Pattern 1 — Rule surfacing (already in this framework)
+```json
+{
+  "version": 1,
+  "hooks": {
+    "preToolUse":  [ { "type": "command", "bash": "node .github/scripts/pre-tool.mjs",  "timeoutSec": 10 } ],
+    "postToolUse": [ { "type": "command", "bash": "node .github/scripts/post-tool.mjs", "timeoutSec": 30 } ],
+    "agentStop":   [ { "type": "command", "bash": "node .github/scripts/stop-gate.mjs", "timeoutSec": 1500 } ]
+  }
+}
+```
 
-The most important hook pattern translates **natively** via `applyTo:` frontmatter. When Copilot is editing any file matching the glob, the instruction body auto-loads into context. Strictly better than a hook in one way: it can't fail silently — Copilot's harness handles it directly.
+- **Input:** JSON on stdin. `agentStop` receives `session_id`, `cwd`, `transcript_path`,
+  `stop_reason`, `stop_hook_active`. `preToolUse` / `postToolUse` receive `tool_name`,
+  `tool_input` (and `tool_result` after). `userPromptSubmitted` receives `prompt`. Field names
+  also arrive camelCase on some surfaces (`sessionId`, `toolName`, `transcriptPath`) — read both.
+- **Output:** JSON on **stdout**. `preToolUse` → `{"permissionDecision": "allow|deny|ask",
+  "permissionDecisionReason": "…"}`; `agentStop` → `{"decision": "block", "reason": "…"}` to
+  force another turn; `postToolUse` → `{"additionalContext": "…"}`.
+- **Exit codes:** `0` = parse stdout. For `preToolUse`, `2` and any other non-zero = **deny**
+  (fail-closed). For other events a non-zero exit is a warning; `stderr` is shown to the user and the
+  run continues.
+- **Timeouts always fail OPEN**, whatever the event. A gate that needs to *block* must finish inside
+  `timeoutSec` or it silently allows. Size the timeout to the slowest honest run and, inside the
+  script, treat your own internal timeout as *inconclusive* (Rule 9 below). **For an iOS build-gate
+  this is the number that matters most** — see Pattern 3.
+- **Loop guard:** `agentStop` passes `stop_hook_active: true` on the forced continuation. Exit
+  `{"decision":"allow"}` when you see it, or you trap the agent.
 
-Recap (also in [`05-INSTRUCTIONS-AND-PROMPTS.md`](05-INSTRUCTIONS-AND-PROMPTS.md)):
+This contract differs from Claude Code's in two ways that matter if you run both editions: the
+reminder goes on **stdout as JSON** (Claude: stderr as text), and `preToolUse` is **fail-closed**
+(Claude: fail-silent). Do not copy a hook script between the two without re-reading this table.
+
+---
+
+## Translation table — the five patterns on Copilot's surface
+
+| Pattern | Copilot mechanism | Quality |
+|---|---|---|
+| 1 Rule-surfacing (load matching rules before an edit) | **Native.** `applyTo:` on instruction files. No script. | Strict |
+| 2 Correction-capture (a correction must become an instruction-file patch) | `userPromptSubmitted` hook detects the correction signal and writes a flag file; `agentStop` hook blocks the stop while the flag exists | Native (v1.1) — previously a manual `/correction-capture` prompt; keep the skill for IDEs without hooks |
+| 3 Build-gate (no stop with build-relevant files dirty and a failing `xcodebuild`) | `agentStop` hook runs the build; `{"decision":"block"}` on a real failure; timeout = inconclusive | Native (v1.1) — plus Definition-of-Done discipline as before |
+| 4 Lint-fix after edit (`swiftformat` / `swiftlint --fix`) | `postToolUse` hook on edit tools, or Xcode/VS Code format-on-save / pre-commit | Native (v1.1); IDE config still preferred |
+| 5 Doc-freshness gate (a production push must be followed by a changelog edit in the same session) | `postToolUse` hook records the last push and the last changelog edit in a state file; `agentStop` blocks when push > changelog | Native (v1.1) |
+| `/commit-push-pr` daily workflow | `.github/skills/commit-push-pr/SKILL.md` (works on every surface; the v1.0 prompt-file version is IDE-only) | Native |
+
+Templates for all of these ship at `templates/hooks/` (Copilot JSON contract, iOS pre-fills) and
+`templates/skills/` (xcodebuild pre-fills). Each script keeps `<UPPERCASE>` placeholders for the
+workspace, scheme, changelog path and protected branch.
+
+### Why the flag-file design instead of parsing the transcript
+
+Claude Code's Stop hooks parse the session transcript (a documented JSONL format). Copilot's
+`agentStop` also hands you a `transcript_path`, but its format is not documented in the hooks
+reference and may differ per surface. The templates therefore never parse it: `userPromptSubmitted`
+and `postToolUse` see the events directly and record what the `agentStop` gate needs in a small
+state file under `.github/hooks/.state/` (gitignored). Same behaviour on every surface, no
+dependency on an undocumented format.
+
+---
+
+## Pattern 1 — Rule surfacing (native)
+
+Unchanged from v1.0. `applyTo:` globs auto-load the instruction body when a matching file is being
+edited or reviewed:
 
 ```yaml
 ---
 applyTo: "Sources/Views/**/*.swift,Sources/**/*View.swift,*.xib,*.storyboard"
 ---
-
-# SwiftUI / UIKit Instructions
-[...rules...]
 ```
 
-When a developer (or the autonomous Cloud Agent) edits any matching file, Copilot pulls the body in. Zero scripting. No hook to maintain. No bug class around "did the hook fire?"
+Discipline that still matters: keep each file short (current guidance: ~1,000 lines max; two pages
+for the repo-wide file — the old "code review reads only the first ~4,000 characters" sentence is
+no longer on the docs), make the globs actually match your real layout (verify with
+`find . -name '*.swift' -path '*Views*' | head`; Tuist / Bazel / SPM-package layouts differ), and
+audit `applyTo:` overlap quarterly.
 
-Discipline you DO need:
-- Keep instruction files ≤ 150 lines / ~3,000 chars
-- Use `applyTo:` globs that actually match your file paths
-- Front-load code-review-relevant rules (Code Review reads first ~4,000 chars only)
-- Have a `context-librarian` specialist who audits `applyTo:` overlap quarterly
+## Pattern 2 — Correction-capture (two hooks + a flag)
 
-## Pattern 2 — Correction-capture (manual prompt)
+1. `userPromptSubmitted` → `correction-detect.mjs`: strips code fences and inline code from the
+   prompt, runs the anchored correction regexes (Rule 11), and on a match writes
+   `.github/hooks/.state/correction-pending`.
+2. `agentStop` → `stop-gate.mjs`: if the flag exists and `stop_hook_active` is false, deletes the
+   flag and returns `{"decision":"block","reason":"<the reminder: draft a one-line patch to the
+   right .github/instructions/<file>.instructions.md and ask for approval — never 'I'll remember'>"}`.
 
-In other harnesses, a Stop hook can detect strong correction signals in the user's message and force a rule patch. Copilot has no Stop event, so the equivalent is a **prompt the developer (or orchestrator) invokes explicitly after a correction**.
+The `/correction-capture` skill remains for surfaces where you have not installed hooks.
 
-The framework ships [`templates/prompts/correction-capture.prompt.md.template`](../templates/prompts/correction-capture.prompt.md.template). After bootstrap it lives at `.github/prompts/correction-capture.prompt.md`. After any correction that feels like a recurring iOS pattern, type:
+## Pattern 3 — Build-gate (`agentStop`, iOS-sized)
 
+`stop-gate.mjs` checks `git status --porcelain` for dirty build-relevant files — pre-filled as
+
+```js
+const BUILD_RELEVANT_RE = /^(Sources|Tests)\/.+\.(swift|m|mm|h)$|\.xcodeproj\/|\.xcworkspace\/|Package\.swift|Podfile/;
 ```
-/correction-capture
+
+— and if any match, runs the build:
+
+```js
+const BUILD_COMMAND = ["xcodebuild", "-workspace", "<WORKSPACE>.xcworkspace", "-scheme", "<SCHEME>",
+                       "-destination", "generic/platform=iOS Simulator", "build"];
+const BUILD_CAP_MS  = 20 * 60 * 1000;   // 20 minutes — MUST be below the hook's timeoutSec
 ```
 
-The prompt walks Copilot through a 5-step checklist:
-1. Is this a recurring iOS pattern (not a one-off)?
-2. Find or create the right `.github/instructions/<file>.instructions.md`
-3. Draft a one-line patch under "Hard rules" or "What NOT to do"
-4. Show the proposed patch
-5. Wait for user approval before applying
+Real non-zero exit → `{"decision":"block","reason":"<build tail>"}`. Internal cap hit → allow
+(inconclusive — CI builds every PR anyway). Loop-guarded.
 
-The discipline is "no `I'll remember`, only patches." Memory is not a substitute for an instruction file.
+**Sizing the two timers is the whole job on iOS.** `xcodebuild` on a busy CI box, with a cold
+DerivedData and a Pods/SPM resolve, routinely takes ten to twenty minutes. So:
 
-Trade-offs:
-- ✅ No false positives (manual invocation only)
-- ✅ Works the same on every Copilot surface
-- ❌ Requires the developer to remember to invoke
-- ❌ Easier to skip than a hook
+- `BUILD_CAP_MS` is set to **20 minutes** in the template. Size it to the slowest honest build on a
+  *busy* machine, not the fastest on an idle one (Pitfall 28).
+- The hook's `timeoutSec` in `hooks.json` **must be ABOVE `BUILD_CAP_MS`** (the template ships
+  `1500` seconds = 25 minutes). If the hook timeout is the lower of the two, the platform kills the
+  hook first and — because **timeouts fail open** — the stop is silently allowed exactly when the
+  build is slow. You get no signal that the gate opened.
+- Use `build`, never `archive` (archive needs signing material the hook must not have), and never
+  `test` (too slow for a gate — tests belong in the specialist's `tests_run` and in CI).
+- `-destination 'generic/platform=iOS Simulator'` avoids depending on a specific simulator name
+  existing on the machine. Keep the `<WORKSPACE>` / `<SCHEME>` placeholders — a project with an
+  `.xcodeproj` only swaps `-workspace` for `-project`.
+- If two sessions share one checkout, point each at its own `-derivedDataPath` or the concurrent
+  builds corrupt each other's output (Pitfall 29).
 
-To minimize the discipline cost, encode the `correction-capture` invocation step into your orchestrator agent's "incoming feedback" rules: *"if the user issues a correction, immediately run the `correction-capture` prompt before continuing."*
+## Pattern 4 — Lint-fix (`postToolUse`)
 
-## Pattern 3 — Build-gate (Definition of Done)
+`lint-fix.mjs` runs the project's auto-fix formatter on the file in `tool_input` when `tool_name`
+is an edit tool and the path matches `/\.swift$/` — pre-filled for `swiftformat <file>` (swap in
+`swiftlint --fix <file>` if that is your tool). Always exits 0 and outputs nothing — a lint problem
+must never block. If you already have Xcode / VS Code format-on-save or a pre-commit hook doing
+this, prefer those and leave this hook out.
 
-Other harnesses can run `xcodebuild` automatically before letting an agent stop. Copilot has no Stop event, so this is enforced via:
+## Pattern 5 — Doc-freshness gate (`postToolUse` + `agentStop`)
 
-1. **Agent Definition of Done** — every implementation specialist's body includes a rule like *"Before declaring `status: completed`, verify the build passes via `xcodebuild test ...` and include the command + result in `tests_run`."*
-2. **Orchestrator return-validation** — the orchestrator rejects returns with empty `tests_run` for code changes.
-3. **`/verify-build` slash prompt** — when in doubt, the orchestrator (or developer) invokes it. The prompt runs `xcodebuild build` (or your project's actual build command) and surfaces the failure tail.
+`doc-freshness-track.mjs` (postToolUse) records two timestamps in the state file: the last shell
+command that was a *real* production push (its own top-level command segment starting with
+`git push` / `gh pr merge` and naming `<PROTECTED_BRANCH>`; heredoc bodies and quoted text never
+count — Rule 10) and the last edit to `<CHANGELOG_PATH>`. `stop-gate.mjs` blocks when the push is
+newer than the changelog edit, with the full doc-update checklist (changelog → affected orientation
+maps → affected instruction files → `PROJECT.md` §3 if what is live on TestFlight / the App Store
+changed — Chapter 12). A `fastlane release` run from a session counts as a production push only if
+your `doc-freshness-track.mjs` is taught to match it — add the lane name to its command matcher if
+releases are cut from agent sessions.
 
-The pattern relies on the orchestrator catching the violation on the return path rather than on a runtime trigger. Less mechanical than a Stop hook, but enforceable as long as the orchestrator's validation step is taken seriously.
+---
 
-iOS-specific build-gate considerations:
-- Don't run `xcodebuild archive` in the slash prompt (slow + requires signing); use `xcodebuild build` for the gate
-- For tests, `xcodebuild test -destination 'platform=iOS Simulator,name=iPhone 15'` (don't depend on physical-device flow in CI)
-- For pure unit tests, `xcodebuild test -only-testing:<TestTarget>` is faster than building the full app
+## Design rules for any Copilot hook
 
-## What does NOT translate from other harnesses
+1. **Decide fail-open vs fail-closed per event, on purpose.** `preToolUse` is fail-closed by the
+   platform (a crashing hook denies every edit). Wrap `main()` in try/catch and emit
+   `{"permissionDecision":"allow"}` on unexpected errors unless the hook is a security gate (a
+   `preToolUse` hook that refuses edits to `*.entitlements` or staging of `*.mobileprovision` is
+   one that should stay fail-closed).
+2. **Scope narrowly.** Filter on `tool_name` / file path first; exit fast.
+3. **Cap output.** `additionalContext` and `reason` land in the model's context — an `xcodebuild`
+   log is enormous; ship the last ~4 KB.
+4. **Loop guard** every `agentStop` hook on `stop_hook_active`.
+5. **One `agentStop` script, ordered checks inside it.** Copilot runs the hooks array in order but
+   the first `block` wins; keeping correction → build → doc-freshness inside one script makes the
+   order explicit and the state file reads cheap.
+6. **stdout is the channel, and it must be valid JSON.** Debug to stderr.
+7. **Commit `.github/hooks/*.json`.** The cloud agent reads only that location; a hook in
+   `~/.copilot/hooks/` enforces nothing for teammates or CI.
+8. **Restart to load.** Hook files are read at session start on the CLI and VS Code; verify in a
+   fresh session, not the one that installed them.
+9. **A killed check is inconclusive, not failed.** Your script's internal build cap must be lower
+   than the hook `timeoutSec` (which fails open anyway), and a cap hit must `allow`, never `block`.
+   An `xcodebuild` killed at the cap has produced **no failure evidence** — its tail is warnings and
+   a half-written log, not an error to "fix".
+10. **Quoted text is data.** Strip fences, inline code and heredoc bodies before pattern-matching;
+    match shell commands per top-level segment with the verb anchored at the start.
+11. **Anchor correction regexes.** Bare `you already` matched "you already have access". A false
+    positive costs more trust than a miss.
 
-### `PostToolUse` lint-fix has no Copilot equivalent
+---
 
-Copilot has no event for "after the file was just edited, run X." This belongs at the IDE layer:
+## What still needs discipline (no hook can do it)
 
-- **Xcode:** Editor → Edit All in Scope, plus SwiftFormat / SwiftLint Build Phase script
-- **VS Code:** Swift extension + `editor.formatOnSave` + `editor.codeActionsOnSave`
-- **Pre-commit:** [pre-commit](https://pre-commit.com/) framework with [SwiftLint](https://github.com/realm/SwiftLint) + [SwiftFormat](https://github.com/nicklockwood/SwiftFormat) hooks
+- The handoff schema being present and evidence-bound on every delegation.
+- A specialist refusing a vague delegation.
+- The orchestrator actually validating `return:` blocks (`tests_run` includes the build; deferred
+  work has a backlog path; `contracts_changed` is backward-compatible).
+- Reading an instruction file *before planning*, not only when `applyTo:` fires on an edit.
+- The `ios-privacy` REVIEW-ONLY audit on any PR touching `Info.plist`, entitlements or a new SDK —
+  a `preToolUse` hook can refuse an *edit*; it cannot make a *review* happen.
 
-If you don't have an editor-level auto-fix yet, fix that before adopting any other parts of this chapter. Copilot will write code at whatever style your editor formats to; if your editor doesn't format on save, every PR will have formatting noise and Copilot has no way to fix it server-side.
+These live in the agent bodies and the Definition of Done, exactly as in v1.0.
 
-### Hooks-on-Cloud-Agent
-
-The Copilot Cloud Agent runs in GitHub Actions with no access to per-developer settings. Hooks-style runtime enforcement on the Cloud Agent would require GitHub Actions workflow steps — outside the framework's surface area. The framework's documentation discipline applies fully to the Cloud Agent because instruction files and prompt files are repository state, not local config.
-
-For iOS specifically, this means: the Cloud Agent honors all your `.github/instructions/*.instructions.md` rules, all your agents' tool allowlists, and all your slash prompts. What it doesn't get is hook-based scaffolding that would exist on a Claude Code adopter's machine.
-
-### Sidebar — Lesson from sister frameworks
-
-If you also adopt [`claude-orchestration-framework`](https://github.com/abhinavsehgal/claude-orchestration-framework) (the Claude Code companion) on a different stack, note: Claude Code's `Stop` hooks have a counterintuitive IO contract — `stdout` is captured but NOT surfaced to the model; only `stderr` is. The Claude framework's v1.1.0 shipped Stop hook templates that wrote reminders to stdout, which meant the reminders correctly produced + exit code was correct, but the model never saw them. v1.1.2 fixed it by switching to stderr.
-
-This whole class of bug doesn't exist on the Copilot side because there's no hook event. The bug-equivalent failure mode for iOS Copilot is "instruction file's `applyTo:` glob doesn't match real paths" — which is much easier to debug (you can run `find . -path ...` against the glob).
+---
 
 ## Verification
 
-For Copilot, "did the rule fire?" is a different question than for Claude Code:
+1. **Hook files load** — start a fresh CLI session in the repo; a `sessionStart` hook that prints
+   one line of `additionalContext` proves the file was read.
+2. **Correction-capture** — type a real correction; attempt to stop; expect the block with the
+   reminder; reply with the patch; second stop succeeds (loop guard).
+3. **Build-gate** — break a SwiftUI view; attempt to stop; expect the block with the `xcodebuild`
+   error tail; fix; stop succeeds. Then time a clean build on your slowest CI box and confirm
+   `BUILD_CAP_MS` < hook `timeoutSec` and both exceed that time.
+4. **Doc-freshness** — run a (dry) `git push origin <PROTECTED_BRANCH>` in the session; attempt to
+   stop; expect the block; edit the changelog; stop succeeds. Then paste a doc that *quotes* the push
+   command and confirm no block.
+5. **Negative test** — a docs-only turn must produce no output from any hook.
+6. **Cloud agent** — assign a trivial issue; confirm in the run log that `.github/hooks/*.json`
+   was loaded. Remember the cloud agent has no signing material (Pitfall 20) — the build-gate's
+   `xcodebuild build` must not need any.
 
-1. **`applyTo:` rule surfacing test** — open a file matching an instruction's `applyTo:` glob in Copilot Chat. Type *"@workspace what instruction files apply here?"* The matching instruction should be listed. If not, the glob doesn't match — fix it.
-2. **Correction-capture test** — issue a correction in Chat, then invoke `/correction-capture`. The prompt should produce a draft instruction-file patch, not a "noted" acknowledgment.
-3. **Build-gate test** — break a SwiftUI view, run a specialist task, confirm the specialist's `return:` block fails the build gate and the orchestrator rejects.
-4. **`/commit-push-pr` test** — run on a trivial doc change with a `--dry-run` style abort instruction. Confirm the workflow is interruptible at each step.
+If any of these fail, treat it as P0 — a hook that silently allows is worse than no hook.
 
-If any of these fail in real-world use, treat as P0 — the Copilot enforcement layer is thinner than other harnesses, so the few mechanical pieces it has must work.
+---
 
 ## Cross-links
 
-- [`01-PRINCIPLES.md`](01-PRINCIPLES.md) § Principle 5 — what's runtime-enforced vs documented
-- [`05-INSTRUCTIONS-AND-PROMPTS.md`](05-INSTRUCTIONS-AND-PROMPTS.md) — `applyTo:` mechanics
-- [`04-HANDOFF-SCHEMA.md`](04-HANDOFF-SCHEMA.md) — how the orchestrator's incoming-validation enforces the build-gate via Definition of Done
-- [`08-IOS-COMMON-PITFALLS.md`](08-IOS-COMMON-PITFALLS.md) § Pitfall 19 — Copilot has no Stop event
-- [`templates/prompts/correction-capture.prompt.md.template`](../templates/prompts/correction-capture.prompt.md.template) and [`commit-push-pr.prompt.md.template`](../templates/prompts/commit-push-pr.prompt.md.template)
+- [`01-PRINCIPLES.md`](01-PRINCIPLES.md) § Principle 5 — runtime-enforced vs documented (the line moved in v1.1)
+- [`05-INSTRUCTIONS-AND-PROMPTS.md`](05-INSTRUCTIONS-AND-PROMPTS.md) — `applyTo:` mechanics; skills vs prompt files
+- [`08-IOS-COMMON-PITFALLS.md`](08-IOS-COMMON-PITFALLS.md) § Pitfall 19 (hooks exist — retraction), § Pitfall 23 (platform drift), § Pitfall 28 (a killed `xcodebuild` is inconclusive)
+- [`12-PROJECT-TRUTH-AND-LEARNINGS.md`](12-PROJECT-TRUTH-AND-LEARNINGS.md) — the rule Pattern 5 enforces
+- [`13-MULTI-REPO-WORKSPACES.md`](13-MULTI-REPO-WORKSPACES.md) — the hooks each child repo brings with it
+- `templates/hooks/` · `templates/skills/`
+- Official: *GitHub Copilot hooks reference*, *VS Code → Hooks*, *About agent skills* (verified 2026-08-22)

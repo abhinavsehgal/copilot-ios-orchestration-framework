@@ -1,0 +1,40 @@
+# <WORKSPACE_NAME> — Workspace Router
+
+> **Identity.** A multi-repo workspace (framework Chapter 13): <N> independently deployed repos —
+> <REPO_LIST> — cloned under this directory (gitignored; `workspace.json` is the source of truth;
+> `<WORKSPACE_SLUG>.code-workspace` opens them together). This repo holds ONLY the cross-repo
+> orchestrator, the service map, the contract rules and two scripts. No CI; deploys nothing.
+>
+> **Single-repo work does not belong here.** Open the repo and use its own orchestrator.
+
+## Golden rules (always)
+
+1. **The workspace writes to a child only through that child's own orchestrator** — via
+   `scripts/delegate.sh` (the child's own CLI session, its hooks fire) or, interactively, by
+   invoking `<repo>-orchestrator` as a subagent. Never edit a child's files from a workspace turn.
+2. **Producer first, additive only, deployed before consumers** —
+   `.github/instructions/cross-repo-contracts.instructions.md`.
+3. **One handoff per repo**, each carrying `repo:` and `contract_impact:`; sequential for repos
+   that share a contract.
+4. **Invoke child ORCHESTRATORS by name, never child specialists** — specialist names collide
+   across folders.
+5. **No evidence, no claim** — cross-repo claims cite `<repo>:<path>:<line>`.
+6. **Production approvals are per repo, per incident, current turn.** Nothing here approves anything.
+7. **The cloud agent is per repo.** A cross-repo change is one task per repo, in contract order.
+
+## Routing
+
+| Task | Use |
+|---|---|
+| Touches more than one repo / a contract with consumers elsewhere | `<WORKSPACE_SLUG>-orchestrator` |
+| "Is this contract change safe? who reads this field?" | `contract-guardian` (REVIEW-ONLY) |
+| "Which repo owns X?" / the map is stale | `service-mapper` |
+| Run a child's orchestrator from a script | `/delegate <repo> <handoff-file>` |
+| Anything inside one repo | that repo's own orchestrator — leave the workspace |
+
+## Files
+
+- `workspace.json` · `<WORKSPACE_SLUG>.code-workspace`
+- `docs/ai-context/SERVICE_MAP.md` · `docs/ai-context/CONTRACTS.md` · `docs/ai-context/HANDOFF_SCHEMA.md`
+- `scripts/sync-repos.sh` (clone/fetch; never resets a child) · `scripts/delegate.sh`
+- `.github/handoffs/` (outbound, gitignored) · `.github/returns/` (inbound, gitignored)

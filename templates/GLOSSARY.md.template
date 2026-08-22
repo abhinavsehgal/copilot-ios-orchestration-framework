@@ -1,0 +1,36 @@
+# <PROJECT_NAME> — Glossary (one name per concept)
+
+> This file is a RULE, not a nicety. Two words for one thing shipped a production bug: a lookup took
+> the new meaning of a word, searched where the old meaning lived, matched nothing, and an empty
+> match silently widened a filter to the whole dataset (Pitfall 31). Name each concept exactly once,
+> and name where each subsystem carries it. **Adding a fifth name for an existing concept is a
+> defect.** Rename only while already editing the file that carries the wrong name, and say so in
+> the commit.
+
+## The hierarchy (if your domain has one)
+
+```
+<LEVEL_1>  →  <LEVEL_2>  →  <LEVEL_3>  →  <LEVEL_4>
+```
+
+| Level | Example | Where it lives |
+|---|---|---|
+| <Level 1> | <example value> | `<table.column>` / `<type.field>` / `<UI label>` |
+| <Level 2> | … | … |
+
+## Terms
+
+| Term (the ONE name) | Means | Carried as | NOT to be called |
+|---|---|---|---|
+| <Term> | <one-sentence definition> | DB `<table.column>` · type `<Type.field>` · UI "<label>" | <banned synonyms found in the codebase> |
+
+## Known debt — places that still use a banned name
+
+| File / field | Uses | Should be | Rename policy |
+|---|---|---|---|
+| `<path>` `<field>` | <banned name> | <term> | <when already editing that file> |
+
+## Cross-links
+
+- `docs/ai-context/PROJECT.md` §6 — sources of truth by domain.
+- `.github/instructions/<domain>.instructions.md` — the hard rules that reference these terms.

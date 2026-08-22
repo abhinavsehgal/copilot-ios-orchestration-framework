@@ -1,0 +1,9 @@
+# Child repo clones — disposable; workspace.json is the source of truth for which repos belong.
+# One line per repo path from workspace.json:
+/<REPO_1_PATH>/
+/<REPO_2_PATH>/
+# Delegation artefacts
+/.github/handoffs/
+/.github/returns/
+.github-pre-bootstrap-backup/
+/.github/hooks/.state/

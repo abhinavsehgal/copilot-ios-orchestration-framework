@@ -1,0 +1,43 @@
+---
+# File name: .github/instructions/cross-repo-contracts.instructions.md
+applyTo: "**"
+---
+
+# Cross-Repo Contracts — Hard Rules
+
+> Multi-client parity (framework Chapter 12) applied across repository boundaries. Applies to every
+> file in the workspace. `contract-guardian` verifies these with evidence.
+
+## Hard rules
+
+### Producer first, additive only, deployed before any consumer depends on it
+**Why:** repos deploy on different clocks and an installed client can be older OR newer than the
+server; a consumer reading an undeployed field fails silently (request succeeds, screen empty).
+**How to apply:** a breaking change is three handoffs — add (producer), move every consumer, remove
+(producer). `contract_impact.level: breaking` in a single handoff is refused.
+
+### Grep every consumer in the same turn, and prove it
+**How to apply:** `contracts_changed[].consumers_grepped` lists `<repo>:<path>` for every consumer
+in `CONTRACTS.md`, including zero-hit ones. Empty on a non-`none` change = incomplete return.
+
+### Never ship a consumer that hard-depends on a brand-new producer route
+**How to apply:** probe once or degrade to the previous behaviour, and SAY so on screen when degraded.
+
+### Same heading ⇒ same endpoint
+**Why:** two consumers rendered the same-titled panel from two endpoints and showed two different
+answers to one question. **How to apply:** open the other consumer's code, find what it fetches,
+record the pairing in `CONTRACTS.md`.
+
+### One brain — logic in the producer, rendering in the consumers
+**How to apply:** a consumer that needs derived data asks for an endpoint; never ports the computation.
+
+### One session for a whole cross-repo change
+**How to apply:** producer edit + every consumer edit handed over together; plan first; delegate in
+contract order.
+
+## What NOT to do
+- Don't edit a child folder from a workspace turn — delegate to its orchestrator.
+- Don't fan out writes to a producer and its consumer in parallel.
+- Don't carry a production approval from one repo to another.
+- Don't add a contract to the code without adding it to `CONTRACTS.md` in the same handoff.
+- Don't expect one cloud-agent task to touch two repos.

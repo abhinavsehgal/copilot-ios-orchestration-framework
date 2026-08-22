@@ -1,0 +1,51 @@
+# <AREA> — Backlog
+
+> One backlog file per feature area (`docs/<AREA>_BACKLOG.md`). Deferred work must be WRITTEN, not
+> spoken: a turn whose summary names any "later", follow-up PR, known gap or deferred phase may not
+> end until the item is here (Chapter 12). A backlog card is a claim, not evidence — verify state in
+> `PROJECT.md` §3 before trusting a "done".
+>
+> **Id discipline.** Items are `<AREA>-N`. Before taking the next N, check the remote AND other
+> sessions' open PRs — concurrent sessions have taken the same id on the same day.
+
+## 🔴 Next — do these first
+
+### <AREA>-1 — <Short title>
+- **Why.** <one sentence on user value or technical reason>
+- **Effort.** <hours / days / weeks>
+- **Where.** <file paths or component names if known>
+- **Revisit when.** <the condition or signal to look for>
+
+## 🟡 Soon — clear value, not urgent
+
+### <AREA>-2 — <Short title>
+- **Why.** …
+- **Effort.** …
+- **Where.** …
+- **Revisit when.** …
+
+## ⚪ Pending — defer until a clear signal
+
+### <AREA>-3 — <Short title>
+- **Why.** …
+- **Effort.** …
+- **Where.** …
+- **Revisit when.** …
+
+## ✓ Done — kept for context
+
+### ✓ DONE — PR #<N> (<YYYY-MM-DD>) — <AREA>-0 — <Short title>
+- **Why.** … (body left in place so the next agent sees the reasoning)
+- **Where.** …
+
+---
+
+## How to pick this up in a future session
+
+Say any of: *"What's pending on <area>?"* (summary of this file) · *"Let's do <item title>"* (scope
+and start that entry) · *"Resume <area>"* (this file + recent PRs + your last instruction).
+
+## Convention for adding items
+
+Append to the right section. Every entry has all four fields. When done, prepend
+`✓ DONE — PR #N (date)` to the title and move it to the Done section — never delete the body.

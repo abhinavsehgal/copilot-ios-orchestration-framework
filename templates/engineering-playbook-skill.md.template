@@ -1,0 +1,129 @@
+---
+name: <PROJECT_SLUG>-engineering
+description: The universal <PROJECT_NAME> execution playbook — six gates (scope → evidence → design challenge → implement → verify → report) with the evidence-confidence taxonomy and verification-proof standards that apply to EVERY substantial task. Fronts the specialised skills (investigate-bug, build-feature) — invoke this when no more specific skill fits, or to hold any task to the same bar.
+---
+
+<!--
+  Copilot AGENT SKILL. Install at `.github/skills/<PROJECT_SLUG>-engineering/SKILL.md`
+  (the directory name is the skill `name:`; `name` is lowercase-hyphen).
+  Frontmatter: `name` + `description` are the required, cross-surface fields. Optional fields
+  (`license`, `allowed-tools`; VS Code also `argument-hint`, `user-invocable`,
+  `disable-model-invocation`) are deliberately omitted here — add only what you have verified
+  against the current Agent Skills docs. Invoked as `/<PROJECT_SLUG>-engineering` or auto-loaded
+  by relevance. Works on the cloud agent, code review, Copilot CLI, VS Code and JetBrains — unlike
+  a prompt file, which is IDE-only.
+-->
+
+# Skill — <PROJECT_NAME> Engineering Playbook
+
+The working method, distilled. The specialised skills encode per-task-type checklists; this skill
+encodes the gates and standards they all share. **If a gate conflicts with a hard rule
+(`.github/instructions/*.instructions.md`), the rule wins.**
+
+**Pre-flight (every task):** read `docs/ai-context/PROJECT.md` (current truth — especially §3,
+what is live where), route via `docs/ai-context/INDEX.md`, skim `docs/ai-context/LEARNINGS.md` §D
+(agent corrections). Verify your checkout: fetch and compare to `<REMOTE>/<BASE_BRANCH>` — the tree
+you were launched in may be a stale snapshot; work in a fresh worktree.
+
+---
+
+## Gate 1 — Scope
+
+1. Restate the user-visible outcome in one paragraph, in the owner's preferred register
+   (`LEARNINGS.md` §E).
+2. Classify the task: **bug | extension | redesign/pivot | data correction | migration | ops |
+   docs-only**. Route: bug → `<investigate-bug skill>`; new feature → `<build-feature skill>`;
+   reverses shipped behaviour → <pivot skill or owner decision>; medium/complex anything →
+   `<PROJECT_SLUG>-orchestrator`.
+3. Identify affected roles and blast radius (which surfaces, tables, jobs, flags, clients).
+4. State what is explicitly OUT of scope. "While I'm in there" refactors are refused by default.
+
+## Gate 2 — Evidence
+
+1. Read the minimum routed context (1–3 orientation maps; the instruction files whose `applyTo:`
+   matches every file you may edit — read them before planning, not just when they auto-load on
+   edit).
+2. **Audit the existing system FIRST and classify each requirement:**
+   - already supported → prove it, then QA instead of building
+   - supported but broken → bug path
+   - partially supported → smallest compatible extension
+   - not supported → design needed (Gate 3)
+   - not actually needed → say so
+   Never invent a parallel system until you have proven the canonical one (`PROJECT.md` §6)
+   cannot do the job.
+3. Trace the real read/write paths end to end and reproduce the issue where applicable.
+4. **Tag every claim with its confidence class** — mandatory in plans and reports:
+   `verified-code` / `verified-schema` / `verified-test` / `verified-git` ·
+   `documented-unverified` (a doc says so — including this repo's own instruction files — and you didn't check) ·
+   `historical` (true at a past date) · `unknown`.
+   Nothing below `verified-*` may silently become a premise of the implementation.
+
+## Gate 3 — Design challenge
+
+Before editing anything:
+1. Name the smallest viable change and at least one rejected alternative.
+2. Search for the existing pattern (an equivalent route, component, migration or script almost
+   always exists — mirror it).
+3. State the **failure condition**: what observation would prove this approach wrong? If you can't
+   name one, the scope is too vague — back to Gate 1.
+4. Run the standing impact list: role/permission leakage · sensitive-data exposure · every client
+   that consumes the same contract · accessibility · backward compatibility during rollout ·
+   flag gating (every user-visible scope expansion gets its OWN default-off flag) · anything that
+   can spend or send goes through its chokepoint.
+
+## Gate 4 — Implement
+
+- Narrow, coherent diffs; match surrounding conventions; preserve public contracts.
+- New user-visible behaviour lands flag-gated (default OFF) when it changes production.
+- Tests at the right level; tests create their own preconditions and tear down — no silent skips.
+- Keep code, migrations, scripts and docs synchronised in the SAME change.
+- Changing a contract consumed by another client or repo? Grep every consumer in the same turn.
+
+## Gate 5 — Verify (this is what "done" means)
+
+A green build or passing test is **evidence, not proof**. The proof ladder, in order of authority:
+
+1. **The user-visible flow, exercised** — drive the real screen, capture the result. Hard-to-reach
+   states are CREATED (test accounts, seeds), not skipped.
+2. **The data, landed** — query for the rows the change was supposed to produce. Proxy signals
+   ("queued", "deployed", "nothing to do") prove nothing.
+3. **The third party, confirmed** — check the provider's dashboard/API, not your code's return value.
+4. **Regression edges** — adjacent tests, permission boundaries, empty/error/loading states, both
+   sides of any two-sided flow.
+
+Plus: verify by reading the row, not by reasoning; never report a negative from a reader whose
+ceiling you have not checked (default pagination caps truncate silently).
+
+**High-risk data corrections** (any bulk write, anything in production) additionally: dry-run by
+default, explicit `--apply`, a deterministic or multi-source gate before each write, quarantine
+ambiguous rows rather than forcing them, per-incident owner approval for production, post-write
+verification query.
+
+## Gate 6 — Report
+
+1. What changed + why this approach (files, with paths).
+2. Instruction files read (and which ones auto-loaded on the paths you edited).
+3. Checks run **and their actual results** — never claim a check you didn't run; a failed check is
+   reported with its output, never hidden.
+4. Risks, limitations, and anything NOT verified (with its confidence class).
+5. Docs updated (changelog for production pushes; `PROJECT.md` §3 if live state changed;
+   `LEARNINGS.md` if a durable lesson emerged; the area backlog for deferred work).
+6. Genuine follow-ups — written to a backlog, not just spoken.
+
+---
+
+## Anti-patterns this skill exists to stop
+
+- Building before auditing what exists.
+- Treating `documented-unverified` as fact (including this repo's own docs and instruction files).
+- "Build passed, so it works." / "Test passed, so the flow works."
+- Verifying on the happy path only, or on one client only.
+- Reporting success for unrun checks; hiding a failed check.
+- Carrying a production approval forward from a previous turn.
+- Ending the turn with deferred work that exists only in prose.
+
+## Cross-links
+
+- `docs/ai-context/PROJECT.md` — current truth · `docs/ai-context/LEARNINGS.md` — why these gates exist.
+- `docs/ai-context/HANDOFF_SCHEMA.md` — the `return:` block Gate 6 aligns with.
+- `.github/agents/<PROJECT_SLUG>-orchestrator.agent.md` — multi-specialist coordination.

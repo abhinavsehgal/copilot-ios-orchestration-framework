@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# delegate.sh <repo-name> <handoff-file> — run a child repo's OWN orchestrator in the child's OWN
+# Copilot CLI session on one framework handoff (Mechanism A, docs/13-MULTI-REPO-WORKSPACES.md).
+#
+# Why the CLI and not an in-editor subagent: run from inside the child, `copilot -p` loads ONLY
+# that repo's copilot-instructions.md, instruction files, agents, skills and .github/hooks — so
+# its gates fire and there are no agent-name collisions. The CLI has no --cwd flag (verified
+# 2026-08-22): we cd. Structured output is not a documented CLI feature: the `return:` YAML block
+# is extracted from the text. Requires: copilot (GitHub Copilot CLI), jq.
+set -euo pipefail
+WS_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+MANIFEST="$WS_ROOT/workspace.json"
+REPO="${1:?usage: delegate.sh <repo-name> <handoff-file>}"
+HANDOFF="${2:?usage: delegate.sh <repo-name> <handoff-file>}"
+
+repo_json=$(jq -c --arg n "$REPO" '.repos[] | select(.name==$n)' "$MANIFEST")
+[ -n "$repo_json" ] || { echo "repo '$REPO' not in workspace.json" >&2; exit 1; }
+path=$(jq -r .path <<<"$repo_json"); orch=$(jq -r .orchestrator <<<"$repo_json")
+
+# A handoff aimed at one repo must never run in another.
+grep -Eq "^\s*repo:\s*$REPO\s*$" "$HANDOFF" || { echo "handoff does not carry 'repo: $REPO'" >&2; exit 1; }
+
+# Tool allowlist from the manifest → repeated --allow-tool= flags. This is the child's entire
+# permission budget for the run (-p never prompts). Never --allow-all-tools on an untrusted repo.
+mapfile -t allow < <(jq -r '.delegation.cli_allow_tools[]? // empty' "$MANIFEST")
+flags=(); for t in "${allow[@]}"; do flags+=("--allow-tool=$t"); done
+
+mkdir -p "$WS_ROOT/.github/returns"
+out="$WS_ROOT/.github/returns/$(date +%Y%m%d-%H%M%S)-$REPO.txt"
+
+( cd "$WS_ROOT/$path" && copilot -p "$(cat "$HANDOFF")" --agent="$orch" "${flags[@]}" -s ) | tee "$out" >/dev/null
+
+# Extract the return block (from the line starting with `return:` to the end of its YAML block).
+awk '/^```yaml/{f=0} f{print} /^return:/{f=1; print}' "$out" | sed '/^```/d'
+echo "# full output: $out" >&2

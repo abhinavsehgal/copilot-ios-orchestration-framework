@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# sync-repos.sh — clone what is missing, fetch what exists. NEVER checks out, resets or
+# rebases a child: each child's team owns its branch state. Reads workspace.json.
+# Requires: git, jq.
+set -euo pipefail
+WS_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+MANIFEST="$WS_ROOT/workspace.json"
+[ -f "$MANIFEST" ] || { echo "no workspace.json at $WS_ROOT" >&2; exit 1; }
+
+jq -c '.repos[]' "$MANIFEST" | while read -r repo; do
+  name=$(jq -r .name <<<"$repo"); path=$(jq -r .path <<<"$repo")
+  url=$(jq -r .url <<<"$repo"); branch=$(jq -r .default_branch <<<"$repo")
+  dest="$WS_ROOT/$path"
+  if [ -d "$dest/.git" ]; then
+    echo "== $name: fetch"
+    git -C "$dest" fetch --quiet --prune origin
+    echo "   on $(git -C "$dest" branch --show-current 2>/dev/null || echo '(detached)') — $(git -C "$dest" rev-list --left-right --count "origin/$branch...HEAD" 2>/dev/null | awk '{print "behind "$1", ahead "$2" of origin/'"$branch"'"}')"
+  else
+    echo "== $name: clone $url → $path"
+    mkdir -p "$(dirname "$dest")"
+    git clone --quiet --branch "$branch" "$url" "$dest"
+  fi
+  # Sanity: the orchestrator we will delegate to must exist in the child.
+  orch=$(jq -r .orchestrator <<<"$repo")
+  if ! grep -rqs "^name: *$orch$" "$dest/.github/agents/" 2>/dev/null; then
+    echo "   ⚠ $name has no .github/agents/*.md with name: $orch — delegation will fail until its layer-1 install exists" >&2
+  fi
+done

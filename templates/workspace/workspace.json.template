@@ -1,0 +1,43 @@
+{
+  "_comment": "Manifest for a multi-repo workspace (docs/13-MULTI-REPO-WORKSPACES.md). The clones under `path` are gitignored and disposable; this file is the source of truth for WHICH repos belong and HOW to delegate to each. Never point `orchestrator` at an agent that does not exist in that repo's .github/agents/. Placeholder examples: <REPO_1_NAME> = ios-app (consumer), <REPO_2_NAME> = orders-api (producer).",
+  "name": "<WORKSPACE_SLUG>",
+  "repos": [
+    {
+      "name": "<REPO_1_NAME>",
+      "_example": "ios-app",
+      "path": "<REPO_1_PATH>",
+      "url": "<REPO_1_GIT_URL>",
+      "default_branch": "<REPO_1_BASE_BRANCH>",
+      "orchestrator": "<REPO_1_NAME>-orchestrator",
+      "build": "<REPO_1_BUILD_COMMAND — e.g. xcodebuild -workspace <WORKSPACE>.xcworkspace -scheme <SCHEME> -destination 'generic/platform=iOS Simulator' build>",
+      "test": "<REPO_1_TEST_COMMAND — e.g. xcodebuild test -workspace <WORKSPACE>.xcworkspace -scheme <SCHEME> -destination 'platform=iOS Simulator,name=<DEVICE>'>",
+      "owns": ["the iOS app — a CONSUMER of every contract below; owns no contract itself"]
+    },
+    {
+      "name": "<REPO_2_NAME>",
+      "_example": "orders-api",
+      "path": "<REPO_2_PATH>",
+      "url": "<REPO_2_GIT_URL>",
+      "default_branch": "<REPO_2_BASE_BRANCH>",
+      "orchestrator": "<REPO_2_NAME>-orchestrator",
+      "build": "<REPO_2_BUILD_COMMAND>",
+      "test": "<REPO_2_TEST_COMMAND>",
+      "owns": ["<capability or bounded context this API repo owns — e.g. orders>"]
+    }
+  ],
+  "contracts": [
+    {
+      "name": "<CONTRACT_NAME>",
+      "kind": "<rest | graphql | grpc | event | shared-schema>",
+      "producer": "<REPO_2_NAME>",
+      "consumers": ["<REPO_1_NAME>"],
+      "spec": "<path relative to workspace, e.g. services/orders-api/openapi.yaml — or the shared Swift package's Package.swift + public API for kind shared-schema>",
+      "versioning": "<one line — e.g. additive-only; breaking = new major path; a shared Swift package is pinned by version TAG in every consumer's Package.swift, never by branch>"
+    }
+  ],
+  "delegation": {
+    "cli_allow_tools": ["<TOOL_SPEC_1>", "<TOOL_SPEC_2>"],
+    "_cli_allow_tools_note": "values for `copilot --allow-tool=` — check `copilot help` for the exact tool-spec syntax on your CLI version; never --allow-all-tools on a repo you do not fully trust",
+    "max_turns_note": "not a documented CLI flag; bound the child by its orchestrator maxTurns-equivalent discipline"
+  }
+}

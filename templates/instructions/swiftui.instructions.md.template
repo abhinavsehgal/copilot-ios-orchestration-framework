@@ -65,7 +65,7 @@ applyTo: "Sources/Views/**/*.swift,Sources/**/*View.swift,*.xib,*.storyboard"
 A good iOS instruction file:
 - Has an `applyTo:` glob that matches actual file paths in your project (verify with `find . -path ...`)
 - Each rule has a concrete "Why" (past production incident or hard invariant) and "How to apply"
-- ≤ 150 lines / ~3,000 chars (Copilot Code Review reads only the first ~4,000 chars)
+- ≤ 150 lines — well inside the documented budget (about two pages / ~1,000 lines per file; the old "code review reads only the first ~4,000 chars" sentence is no longer on the docs, verified 2026-08-22)
 - Front-loads the most-violated rules
 - Cites at most 3 cross-links
 
