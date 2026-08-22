@@ -90,6 +90,9 @@ The agentic `copilot` command in the terminal. Interactive by default; non-inter
 
 ### Inline completions don't enforce path-globbed instructions
 
+> **Not re-verified on 2026-08-22.** The stack-agnostic edition's chapter 6 states the opposite (that inline completions DO load matching `.github/instructions/` files). Neither claim was part of the v1.1 verification pass. Treat this section as `documented-unverified` (Chapter 12) until you confirm it against the current Copilot docs for your IDE; the mitigation below is harmless either way.
+
+
 If your `swiftui.instructions.md` says *"never use `@ObservedObject` in a top-level view; use `@StateObject`"* — Copilot Chat respects it (auto-loaded), but **inline completions while you're typing in a SwiftUI view file do not load the rule**. Inline completions only see the thin `.github/copilot-instructions.md`.
 
 **Mitigation:** put the most-violated rules in `.github/copilot-instructions.md` itself with iOS prefix tags: *"iOS: SwiftUI top-level views use `@StateObject` not `@ObservedObject`."* The trade-off is a slightly heavier router, but inline completions get the benefit.
