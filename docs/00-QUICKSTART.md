@@ -397,6 +397,8 @@ Rename `total` to `grandTotal` in the orders API response.
 
 ## Cross-links
 
+- `docs/00-QUICKSTART.html` — this guide plus the other two editions as one offline page with tabs (open in a browser; generated from the three `00-QUICKSTART.md` files on 2026-08-22).
+
 - `docs/09-IOS-RUNBOOK.md` — the long version of Part 2.
 - `docs/10-MECHANICAL-ENFORCEMENT.md` — hooks (Part 2 step 7).
 - `docs/13-MULTI-REPO-WORKSPACES.md` — the long version of Part 3 (one iOS app + N API repos; shared Swift packages as contracts).

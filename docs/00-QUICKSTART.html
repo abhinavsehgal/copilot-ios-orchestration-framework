@@ -1,0 +1,538 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Orchestration Onboarding</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root { --ground:#F4F6F8; --card:#FFFFFF; --ink:#1C2733; --ink-soft:#4A5866; --mute:#7C8794; --line:#D9DFE5;
+    --accent:#0E7C7B; --accent-ink:#0B5F5E; --accent-soft:#E3F1F0; --warn:#A8601C; --warn-soft:#FBF0E3; --ok:#2E7D4F; --ok-soft:#E5F2EA;
+    --code-bg:#1F2A36; --code-ink:#E8EEF3; --code-c:#8FA3B4; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --ground:#10161D; --card:#18212B; --ink:#E6ECF1; --ink-soft:#B4BFCA; --mute:#7F8B98; --line:#2A3542;
+    --accent:#4FB3B1; --accent-ink:#8AD8D6; --accent-soft:#16302F; --warn:#E0A060; --warn-soft:#2D2216; --ok:#6FC393; --ok-soft:#15291D; --code-bg:#0B1117; --code-ink:#DCE4EB; --code-c:#8FA3B4; } }
+  :root[data-theme="dark"] { --ground:#10161D; --card:#18212B; --ink:#E6ECF1; --ink-soft:#B4BFCA; --mute:#7F8B98; --line:#2A3542;
+    --accent:#4FB3B1; --accent-ink:#8AD8D6; --accent-soft:#16302F; --warn:#E0A060; --warn-soft:#2D2216; --ok:#6FC393; --ok-soft:#15291D; --code-bg:#0B1117; --code-ink:#DCE4EB; --code-c:#8FA3B4; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--ground); color:var(--ink); font-family:"IBM Plex Sans","Segoe UI",system-ui,sans-serif; font-size:17px; line-height:1.6; }
+  a { color:var(--accent-ink); }  a:focus-visible, button:focus-visible { outline:3px solid var(--accent); outline-offset:2px; }
+  h1,h2,h3 { font-family:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif; text-wrap:balance; line-height:1.15; margin:0; }
+  h1 { font-size:clamp(2rem,4vw,3rem); font-weight:700; letter-spacing:-0.01em; }
+  h2 { font-size:1.6rem; font-weight:700; padding-bottom:10px; border-bottom:2px solid var(--line); margin-bottom:14px; }
+  h3 { font-size:1.12rem; font-weight:700; margin-top:10px; }
+  code,pre { font-family:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace; }
+  code { font-size:0.9em; background:var(--accent-soft); color:var(--accent-ink); padding:0.1em 0.35em; border-radius:4px; }
+  pre { margin:0; background:var(--code-bg); color:var(--code-ink); padding:14px 16px; border-radius:8px; font-size:0.86rem; line-height:1.55; overflow-x:auto; }
+  pre code { background:none; color:inherit; padding:0; font-size:inherit; }  pre .c { color:var(--code-c); }
+  .wrap { display:grid; grid-template-columns:1fr; gap:32px; max-width:1180px; margin:0 auto; padding:32px 20px 96px; }
+  @media (min-width:980px) { .wrap { grid-template-columns:230px minmax(0,1fr); } }
+  .rail { display:none; }
+  @media (min-width:980px) { .rail { display:block; position:sticky; top:20px; align-self:start; }
+    .rail ol { list-style:none; margin:0; padding:0; border-left:2px solid var(--line); }
+    .rail li a { display:block; padding:6px 0 6px 14px; margin-left:-2px; border-left:2px solid transparent; color:var(--ink-soft); text-decoration:none; font-size:0.9rem; }
+    .rail li a:hover { border-left-color:var(--accent); color:var(--ink); } .rail .eyebrow { margin-bottom:10px; } }
+  main { max-width:74ch; }
+  .eyebrow { font-size:0.74rem; text-transform:uppercase; letter-spacing:0.12em; color:var(--mute); font-weight:600; margin-top:12px; }
+  header.hero { margin-bottom:24px; }  header.hero p.lede { font-size:1.12rem; color:var(--ink-soft); margin:12px 0 0; max-width:62ch; }
+  .tabs { display:flex; gap:6px; flex-wrap:wrap; margin:22px 0 6px; border-bottom:1px solid var(--line); }
+  .tabs button { appearance:none; background:none; border:0; border-bottom:3px solid transparent; padding:10px 14px; font:inherit; font-weight:600; color:var(--ink-soft); cursor:pointer; }
+  .tabs button[aria-selected="true"] { color:var(--accent-ink); border-bottom-color:var(--accent); }
+  .tabs button small { display:block; font-weight:400; font-size:0.78rem; color:var(--mute); }
+  .edition { display:none; }  .edition[data-active="true"] { display:block; }
+  .edmeta { display:flex; flex-wrap:wrap; gap:8px 18px; font-size:0.88rem; color:var(--mute); margin:10px 0 8px; }
+  section.part { margin-top:44px; display:grid; gap:12px; }
+  section.part > p { margin:0; }  p.why { color:var(--ink-soft); font-size:0.97rem; margin:0; }
+  h3.step { display:flex; align-items:center; gap:12px; margin-top:22px; }
+  h3.step .n { display:inline-grid; place-items:center; width:30px; height:30px; border-radius:50%; background:var(--accent); color:#fff; font-size:0.95rem; flex:0 0 auto; }
+  .check { display:flex; gap:10px; align-items:flex-start; background:var(--ok-soft); border-radius:8px; padding:10px 12px; font-size:0.95rem; }  .check .tick { color:var(--ok); font-weight:700; }
+  .watch { display:flex; gap:10px; align-items:flex-start; background:var(--warn-soft); border-radius:8px; padding:10px 12px; font-size:0.95rem; }  .watch .bang { color:var(--warn); font-weight:700; }
+  .note { background:var(--card); border:1px solid var(--line); border-left:4px solid var(--accent); border-radius:8px; padding:10px 14px; font-size:0.95rem; color:var(--ink-soft); }
+  .tablewrap { overflow-x:auto; border:1px solid var(--line); border-radius:10px; background:var(--card); }
+  table { width:100%; border-collapse:collapse; font-size:0.94rem; }
+  th,td { text-align:left; padding:10px 12px; border-top:1px solid var(--line); vertical-align:top; overflow-wrap:break-word; }
+  thead th { border-top:0; background:var(--accent-soft); color:var(--accent-ink); font-size:0.78rem; text-transform:uppercase; letter-spacing:0.08em; }
+  ul.list { margin:0; padding-left:1.2em; }  ul.print { list-style:none; margin:0; padding:0; display:grid; gap:6px; }  ul.print li::before { content:"☐  "; color:var(--mute); }
+  footer { margin-top:56px; color:var(--mute); font-size:0.88rem; border-top:1px solid var(--line); padding-top:16px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav class="rail" aria-label="On this page"><div class="eyebrow">On this page</div><ol data-rail="copilot" style="display:block"><li><a href="#copilot-part-0-the-words-read-once">Part 0 · The words (read once)</a></li><li><a href="#copilot-part-1-before-you-start-15-minutes-once-">Part 1 · Before you start (15 minutes, once per person)</a></li><li><a href="#copilot-part-2-one-repo-2-4-hours-repeat-for-eve">Part 2 · One repo (2–4 hours — repeat for every repo)</a></li><li><a href="#copilot-part-3-the-workspace-one-afternoon-once-">Part 3 · The workspace (one afternoon, once per team)</a></li><li><a href="#copilot-part-4-every-day-the-whole-thing-in-one-">Part 4 · Every day (the whole thing in one table)</a></li><li><a href="#copilot-part-5-when-it-goes-wrong">Part 5 · When it goes wrong</a></li><li><a href="#copilot-the-checklist-print-this">The checklist (print this)</a></li><li><a href="#copilot-cross-links">Cross-links</a></li></ol><ol data-rail="claude" style="display:none"><li><a href="#claude-part-0-the-words-read-once">Part 0 · The words (read once)</a></li><li><a href="#claude-part-1-before-you-start-15-minutes-once-">Part 1 · Before you start (15 minutes, once per person)</a></li><li><a href="#claude-part-2-one-repo-2-4-hours-repeat-for-eve">Part 2 · One repo (2–4 hours — repeat for every repo)</a></li><li><a href="#claude-part-3-the-workspace-one-afternoon-once-">Part 3 · The workspace (one afternoon, once per team)</a></li><li><a href="#claude-part-4-every-day-the-whole-thing-in-one-">Part 4 · Every day (the whole thing in one table)</a></li><li><a href="#claude-part-5-when-it-goes-wrong">Part 5 · When it goes wrong</a></li><li><a href="#claude-the-checklist-print-this">The checklist (print this)</a></li><li><a href="#claude-cross-links">Cross-links</a></li></ol><ol data-rail="ios" style="display:none"><li><a href="#ios-part-0-the-words-read-once">Part 0 · The words (read once)</a></li><li><a href="#ios-part-1-before-you-start-15-minutes-once-">Part 1 · Before you start (15 minutes, once per person)</a></li><li><a href="#ios-part-2-one-repo-2-4-hours-repeat-for-eve">Part 2 · One repo (2–4 hours — repeat for every repo)</a></li><li><a href="#ios-part-3-the-workspace-one-afternoon-once-">Part 3 · The workspace (one afternoon, once per team)</a></li><li><a href="#ios-part-4-every-day-the-whole-thing-in-one-">Part 4 · Every day (the whole thing in one table)</a></li><li><a href="#ios-part-5-when-it-goes-wrong">Part 5 · When it goes wrong</a></li><li><a href="#ios-the-checklist-print-this">The checklist (print this)</a></li><li><a href="#ios-cross-links">Cross-links</a></li></ol></nav>
+  <main>
+    <header class="hero">
+      <div class="eyebrow">Multi-agent orchestration · three editions · many repos</div>
+      <h1>Orchestration Onboarding</h1>
+      <p class="lede">How to put any project — even one spread across many repos — onto the orchestration framework. One small step at a time. Every step says what to do, why, what to paste, and how you know it worked. Pick your tool.</p>
+      <div class="tabs" role="tablist" aria-label="Edition"><button role="tab" id="tab-copilot" aria-selected="true" aria-controls="ed-copilot" data-ed="copilot">GitHub Copilot<small>VS Code + Copilot CLI</small></button><button role="tab" id="tab-claude" aria-selected="false" aria-controls="ed-claude" data-ed="claude">Claude Code<small>claude CLI</small></button><button role="tab" id="tab-ios" aria-selected="false" aria-controls="ed-ios" data-ed="ios">Copilot for iOS<small>VS Code + Copilot CLI + Xcode</small></button></div>
+    </header>
+    <div class="edition" id="ed-copilot" role="tabpanel" aria-labelledby="tab-copilot" data-active="true">
+<div class="edmeta"><span>Source: <a href="https://github.com/abhinavsehgal/github-copilot-orchestration-framework/blob/main/docs/00-QUICKSTART.md">docs/00-QUICKSTART.md</a> (v1.2.0)</span><span>This page is generated from that file — if they disagree, the file wins.</span></div>
+<div class="note"><span>The whole framework as one step-by-step walk. Every step says <b>what to do</b>, <b>why</b>, <b>what to paste</b>, and <b>how you know it worked</b>. Written for someone who has never seen the framework; the long version of each part is linked. Based on v1.2.0 and the GitHub Copilot + VS Code docs as verified on 2026-08-22 — if a step here disagrees with the chapter it links to, the chapter wins.  <b>Time:</b> 15 min once per person · 2–4 h per repo · one afternoon for the workspace.</span></div>
+<section class="part" id="copilot-part-0-the-words-read-once"><h2>Part 0 · The words (read once)</h2>
+<p>Nine words. Everything else in this guide is made of these.</p>
+<div class="tablewrap"><table><thead><tr><th>Word</th><th>Means</th></tr></thead><tbody><tr><td><b>Orchestrator</b></td><td>The manager. Reads your task, decides who should do it, writes them a note, checks their work. <b>Never touches code itself.</b></td></tr><tr><td><b>Specialist</b></td><td>A worker who does one kind of job (the API, the database, the UI, testing…). Touches only its own corner.</td></tr><tr><td><b>Handoff</b></td><td>The note the manager writes the worker: what to do, what the manager already knows (with proof), what would prove the manager wrong, what not to touch.</td></tr><tr><td><b>Return</b></td><td>The note the worker writes back: what it checked, what it changed, what it couldn't verify, what the manager must not pass on as fact.</td></tr><tr><td><b>Instruction file</b></td><td>A sticky note on a drawer. When anyone opens files in that drawer, the note appears. Lives in <code>.github/instructions/</code>.</td></tr><tr><td><b>Skill</b></td><td>A recipe card for a job you do again and again (<code>/commit-push-pr</code>, <code>/verify-build</code>). Lives in <code>.github/skills/</code>.</td></tr><tr><td><b>Hook</b></td><td>A tripwire. Runs a script when something happens (before a tool runs, when the agent tries to stop). Optional — add later.</td></tr><tr><td><b>Workspace</b></td><td>One desk with every repo's folder on it, plus one manager who only coordinates between repos. Its own small git repo.</td></tr><tr><td><b>Contract</b></td><td>The promise between a service and everyone who calls it (an API shape, an event payload, a shared package). The thing that breaks when two repos change at different times.</td></tr></tbody></table></div>
+</section>
+<section class="part" id="copilot-part-1-before-you-start-15-minutes-once-"><h2>Part 1 · Before you start (15 minutes, once per person)</h2>
+<h3 class="step"><span class="n">1</span>Make sure you have the four tools</h3>
+<p class="why"><b>Why:</b> VS Code runs the agents; the Copilot CLI runs them from a terminal and is what the workspace uses to reach into other repos; git and <code>jq</code> are used by the workspace scripts.</p>
+<pre><code><span class="c"># Each of these should print a version, not an error</span>
+code --version
+copilot --version      <span class="c"># the GitHub Copilot CLI (the agentic one, not `gh copilot`)</span>
+git --version
+jq --version
+node --version         <span class="c"># only needed if you later turn on hooks</span></code></pre>
+<p>Missing <code>copilot</code>? Install it from GitHub's Copilot CLI page (docs.github.com → Copilot → Copilot CLI → Install). Missing <code>jq</code>? <code>brew install jq</code> on a Mac, <code>winget install jqlang.jq</code> on Windows.</p>
+<div class="check"><span class="tick">✓</span><span><b>You know it worked when:</b> all five print a version, and in VS Code the Copilot Chat panel opens with <b>Agent</b> in the mode dropdown.</span></div>
+<h3 class="step"><span class="n">2</span>Get the framework onto your disk</h3>
+<p class="why"><b>Why:</b> the framework is a folder of templates and two copy-paste prompts. You never install it into your project — you point Copilot at it.</p>
+<pre><code>mkdir -p ~/frameworks
+git clone https://github.com/abhinavsehgal/github-copilot-orchestration-framework.git ~/frameworks/copilot
+echo ~/frameworks/copilot     <span class="c"># remember this path — you will paste it into the prompts</span></code></pre>
+<div class="check"><span class="tick">✓</span><span><code>ls ~/frameworks/copilot</code> shows <code>docs  prompts  templates</code>.</span></div>
+<h3 class="step"><span class="n">3</span>Read one file</h3>
+<p class="why"><b>Why:</b> twenty minutes now saves a confused afternoon later. Skip the rest of the docs for now.</p>
+<p>Open <code>docs/09-RUNBOOK.md</code>. That is the long version of Part 2 below.</p>
+<div class="check"><span class="tick">✓</span><span>You can say in one sentence what the orchestrator does and does not do. (It coordinates. It never edits.)</span></div>
+</section>
+<section class="part" id="copilot-part-2-one-repo-2-4-hours-repeat-for-eve"><h2>Part 2 · One repo (2–4 hours — repeat for every repo)</h2>
+<p>Every repo gets its own manager and its own workers. Yes, every one — even a tiny service. The workspace in Part 3 only works if each repo already has this. Start with the repo you know best.</p>
+<h3 class="step"><span class="n">1</span>Open the repo in VS Code on a fresh branch</h3>
+<p class="why"><b>Why:</b> the setup creates new files. A clean branch means you can throw it all away if you don't like it.</p>
+<pre><code>cd ~/code/&lt;your-repo&gt;
+git checkout main &amp;&amp; git pull
+git checkout -b setup/copilot-orchestration
+code .</code></pre>
+<div class="check"><span class="tick">✓</span><span><code>git status</code> is clean and the bottom-left of VS Code says <code>setup/copilot-orchestration</code>.</span></div>
+<h3 class="step"><span class="n">2</span>Run the INVENTORY prompt (look, don't touch)</h3>
+<p class="why"><b>Why:</b> Copilot scans the repo and <i>proposes</i> which specialists this repo needs. It writes nothing. You correct the proposal before anything is created.</p>
+<p>Open Copilot Chat → set the mode dropdown to <b>Agent</b>. Open <code>~/frameworks/copilot/prompts/INVENTORY-PROMPT.md</code>, copy all of it, paste it into the chat. Replace <code>&lt;framework path&gt;</code> with the path from Part 1 step 2. Send.</p>
+<p>It comes back with: a list of proposed specialists (usually 4–8), proposed instruction files with their folder globs, and a list of <b>Open Questions</b>. Answer the questions. Cross out specialists that feel wrong. Fewer is better.</p>
+<div class="watch"><span class=bang>!</span><span><b>The orchestrator must be named <code>&lt;repo-name&gt;-orchestrator</code></b> (for example <code>orders-orchestrator</code>). Not just <code>orchestrator</code>. In Part 3 every repo's manager sits on the same desk, and names must not collide.</span></div>
+<div class="check"><span class="tick">✓</span><span>You have a short list of specialist names you agree with, and <code>git status</code> is still clean.</span></div>
+<h3 class="step"><span class="n">3</span>Run the BOOTSTRAP prompt (now it builds)</h3>
+<p class="why"><b>Why:</b> this creates all the files. It first <b>backs up</b> anything already in <code>.github/</code> and asks before overwriting — so an existing <code>copilot-instructions.md</code> your team wrote is safe.</p>
+<p>In the <b>same chat</b>, paste <code>~/frameworks/copilot/prompts/BOOTSTRAP-PROMPT.md</code> (path replaced again). It shows you each file before saving. Say yes to each one you agree with.</p>
+<p>What it creates:</p>
+<div class="tablewrap"><table><thead><tr><th>File</th><th>What it is</th></tr></thead><tbody><tr><td><code>.github/copilot-instructions.md</code></td><td>The router. Short. Read by every Copilot request.</td></tr><tr><td><code>.github/agents/&lt;repo&gt;-orchestrator.agent.md</code></td><td>The manager.</td></tr><tr><td><code>.github/agents/&lt;name&gt;.agent.md</code> ×N</td><td>The workers.</td></tr><tr><td><code>.github/instructions/&lt;area&gt;.instructions.md</code></td><td>The sticky notes, each with an <code>applyTo:</code> glob.</td></tr><tr><td><code>.github/skills/&lt;repo&gt;-engineering/SKILL.md</code></td><td>The six-gate working method every task follows.</td></tr><tr><td><code>docs/ai-context/PROJECT.md</code></td><td>"What is true right now" — what's live where, verified commands.</td></tr><tr><td><code>docs/ai-context/LEARNINGS.md</code></td><td>Decisions, failed approaches, corrections.</td></tr><tr><td><code>docs/ai-context/HANDOFF_SCHEMA.md</code>, <code>INDEX.md</code>, <code>GLOSSARY.md</code></td><td>The note format, the map, the one-name-per-thing list.</td></tr><tr><td><code>docs/&lt;AREA&gt;_BACKLOG.md</code></td><td>Where "we'll do it later" must be written down.</td></tr></tbody></table></div>
+<div class="check"><span class="tick">✓</span><span><code>ls .github/agents</code> lists your orchestrator and specialists. Your normal build still passes.</span></div>
+<h3 class="step"><span class="n">4</span>Check the manager shows up</h3>
+<p class="why"><b>Why:</b> an agent file with a typo in its name silently doesn't load.</p>
+<p>In VS Code: <b>Developer: Reload Window</b> (Ctrl/Cmd+Shift+P). Open Copilot Chat. Click the agent dropdown (next to the mode dropdown).</p>
+<div class="check"><span class="tick">✓</span><span>You see <code>&lt;repo&gt;-orchestrator</code> and every specialist in the dropdown.</span></div>
+<div class="watch"><span class=bang>!</span><span>Not there? The file must end in <code>.agent.md</code>, the <code>name:</code> line must match, and the YAML between the <code>---</code> lines must be valid. Fix, reload, look again.</span></div>
+<h3 class="step"><span class="n">5</span>Give it one real, small job</h3>
+<p class="why"><b>Why:</b> the only proof the setup works is watching a handoff go out and a return come back.</p>
+<p>Select <code>&lt;repo&gt;-orchestrator</code> in the dropdown. Type a real bug or tiny feature from your tracker — one that needs maybe 30 minutes of human work. Send.</p>
+<p>Watch for three things: it restates the task; it writes a <code>handoff:</code> block (YAML) with <code>claims</code>, <code>failure_condition</code>, <code>in_scope</code>; the specialist answers with a <code>return:</code> block that lists <code>files_changed</code> and <code>tests_run</code>.</p>
+<div class="check"><span class="tick">✓</span><span>You saw both blocks. The change is small and correct. If the specialist <i>refused</i> a vague handoff — that's the framework working, not failing.</span></div>
+<h3 class="step"><span class="n">6</span>Commit, open a PR, merge</h3>
+<p class="why"><b>Why:</b> teammates get the agents the moment they pull. The backup folder stays local.</p>
+<pre><code>git add .github/ docs/ .gitignore
+git commit -m "chore: bootstrap Copilot orchestration framework"
+git push -u origin setup/copilot-orchestration
+gh pr create --base main --title "Bootstrap Copilot orchestration"</code></pre>
+<div class="check"><span class="tick">✓</span><span>PR merged. A teammate pulls, reloads VS Code, and sees the same agents in their dropdown.</span></div>
+<h3 class="step"><span class="n">7</span>Later, not now: turn on hooks</h3>
+<p class="why"><b>Why:</b> hooks are tripwires (block a stop while the build is red; force a correction to become an instruction file; refuse to end a turn after a production push with stale docs). Add them only after you've seen people skip the written rules. <code>docs/10-MECHANICAL-ENFORCEMENT.md</code> is the recipe.</p>
+<pre><code><span class="c"># when you're ready:</span>
+cp ~/frameworks/copilot/templates/hooks/hooks.json.template .github/hooks/framework.json
+mkdir -p .github/scripts &amp;&amp; cp ~/frameworks/copilot/templates/hooks/*.mjs.template .github/scripts/
+<span class="c"># rename *.mjs.template → *.mjs, fill the &lt;PLACEHOLDERS&gt;, restart VS Code</span></code></pre>
+<div class="watch"><span class=bang>!</span><span>Hooks are read when a session starts. After installing: reload VS Code / start a new <code>copilot</code> session, then test. Hook timeouts <b>fail open</b> — a slow check silently allows.</span></div>
+<p><b>Now do Part 2 again for the next repo.</b> Two repos done with working orchestrators is the minimum before Part 3.</p>
+</section>
+<section class="part" id="copilot-part-3-the-workspace-one-afternoon-once-"><h2>Part 3 · The workspace (one afternoon, once per team)</h2>
+<p>Only when tasks keep saying "change the orders service <i>and</i> the web app". The workspace is a small extra repo that holds one coordinating manager, a map of who owns what, and the rules for changing contracts. It holds <b>no workers</b> — they stay in their repos. Long version: <code>docs/12-MULTI-REPO-WORKSPACES.md</code>.</p>
+<h3 class="step"><span class="n">1</span>Create an empty repo and clone it</h3>
+<p class="why"><b>Why:</b> the workspace is its own repo so the map and the rules are versioned and shared. It has no CI and deploys nothing.</p>
+<pre><code>gh repo create &lt;team&gt;-workspace --private --clone
+cd &lt;team&gt;-workspace</code></pre>
+<div class="check"><span class="tick">✓</span><span>You're inside an empty folder with a <code>.git</code>.</span></div>
+<h3 class="step"><span class="n">2</span>Copy the workspace templates into place</h3>
+<p class="why"><b>Why:</b> fourteen files, each with a fixed home. <code>templates/workspace/README.md</code> has the same table.</p>
+<pre><code>T=~/frameworks/copilot/templates/workspace
+mkdir -p .github/agents .github/instructions .github/skills/delegate scripts docs/ai-context
+cp $T/copilot-instructions.md.template              .github/copilot-instructions.md
+cp $T/workspace.code-workspace.template             &lt;team&gt;.code-workspace
+cp $T/workspace.json.template                       workspace.json
+cp $T/gitignore.template                            .gitignore
+cp $T/orchestrator-agent.md.template                .github/agents/&lt;team&gt;-orchestrator.agent.md
+cp $T/contract-guardian-agent.md.template           .github/agents/contract-guardian.agent.md
+cp $T/service-mapper-agent.md.template              .github/agents/service-mapper.agent.md
+cp $T/cross-repo-contracts.instructions.md.template .github/instructions/cross-repo-contracts.instructions.md
+cp $T/delegate-skill/SKILL.md.template              .github/skills/delegate/SKILL.md
+cp $T/sync-repos.sh.template scripts/sync-repos.sh
+cp $T/delegate.sh.template   scripts/delegate.sh
+cp $T/SERVICE_MAP.md.template docs/ai-context/SERVICE_MAP.md
+cp $T/CONTRACTS.md.template   docs/ai-context/CONTRACTS.md
+cp ~/frameworks/copilot/templates/HANDOFF_SCHEMA.md.template docs/ai-context/HANDOFF_SCHEMA.md
+chmod +x scripts/*.sh</code></pre>
+<div class="check"><span class="tick">✓</span><span><code>find . -type f -not -path './.git/*'</code> matches the layout in chapter 12.</span></div>
+<h3 class="step"><span class="n">3</span>Fill in the blanks — mostly in one file</h3>
+<p class="why"><b>Why:</b> <code>workspace.json</code> is the source of truth: which repos, where they live, what each one's manager is called, and every contract between them. The scripts read it; you never hard-code a path anywhere else.</p>
+<p>Open <code>workspace.json</code>. For each repo fill <code>name</code>, <code>path</code> (e.g. <code>services/orders</code>), <code>url</code>, <code>default_branch</code>, <code>orchestrator</code> (exactly the name from Part 2 — <code>orders-orchestrator</code>), <code>build</code>, <code>test</code>. For each contract fill <code>producer</code>, <code>consumers</code>, <code>spec</code> (where the API/event spec file lives), and a one-line <code>versioning</code> rule.</p>
+<p>Then search every copied file for <code>&lt;</code> and replace the remaining placeholders (<code>&lt;WORKSPACE_SLUG&gt;</code>, <code>&lt;REPO_1_NAME&gt;</code>…). The <code>.code-workspace</code> folder list must match the <code>path</code>s in <code>workspace.json</code>.</p>
+<div class="check"><span class="tick">✓</span><span><code>grep -rn "&lt;[A-Z_0-9]*&gt;" . --exclude-dir=.git</code> prints nothing. <code>jq . workspace.json</code> prints valid JSON.</span></div>
+<h3 class="step"><span class="n">4</span>Pull every repo onto the desk</h3>
+<p class="why"><b>Why:</b> the children are plain clones in gitignored folders — disposable. The script clones what's missing and fetches what exists. It <b>never</b> switches or resets a branch; each repo's team owns that.</p>
+<pre><code>scripts/sync-repos.sh</code></pre>
+<div class="check"><span class="tick">✓</span><span>One <code>==</code> line per repo, no <code>⚠</code> warnings. A warning means that repo has no <code>&lt;repo&gt;-orchestrator</code> yet — go back to Part 2 for it.</span></div>
+<h3 class="step"><span class="n">5</span>Open the desk in VS Code</h3>
+<p class="why"><b>Why:</b> VS Code reads each folder's <code>.github/</code> separately, so every repo's agents, sticky notes and skills are all available at once. The workspace file also switches on nested subagents.</p>
+<p><b>File → Open Workspace from File…</b> → pick <code>&lt;team&gt;.code-workspace</code>. Reload the window once it opens.</p>
+<div class="check"><span class="tick">✓</span><span>The Explorer shows the workspace folder plus every child. The agent dropdown shows <code>&lt;team&gt;-orchestrator</code>, <code>contract-guardian</code>, <code>service-mapper</code> <i>and</i> each repo's own orchestrator.</span></div>
+<div class="watch"><span class=bang>!</span><span>Every repo ships a worker called <code>backend-api</code>. On the desk those names collide. Rule: from the workspace, <b>only ever pick an orchestrator by name</b>. Never a worker. The workspace manager already knows this.</span></div>
+<h3 class="step"><span class="n">6</span>Commit the workspace</h3>
+<pre><code>git add -A
+git commit -m "chore: bootstrap cross-repo workspace"
+git push -u origin main</code></pre>
+<div class="check"><span class="tick">✓</span><span><code>git status</code> shows no child repo files — the clones are ignored, the map and rules are committed.</span></div>
+<h3 class="step"><span class="n">7</span>The first cross-repo job — add something</h3>
+<p class="why"><b>Why:</b> the workspace's whole job is ordering changes across a contract: the service that <i>produces</i> a field changes first, is deployed, and only then do the apps that <i>read</i> it change.</p>
+<p>Select <code>&lt;team&gt;-orchestrator</code>. Ask for something additive that crosses one contract, for example:</p>
+<pre><code>Add an `estimated_delivery` field to the orders API response and show it on the web order page.</code></pre>
+<p>Watch for: it reads <code>CONTRACTS.md</code>; it says "producer first: orders, then web"; it writes one handoff per repo, each with <code>repo:</code> and <code>contract_impact: additive</code>; it hands the orders job to <code>orders-orchestrator</code> (in chat) or runs <code>scripts/delegate.sh orders …</code> (from a terminal — that runs the orders repo's own Copilot session so its own rules and hooks apply).</p>
+<div class="check"><span class="tick">✓</span><span>Two handoffs, in that order. Each return lists <code>consumers_grepped</code>. <code>git status</code> in the workspace root is clean — the workspace itself changed nothing.</span></div>
+<h3 class="step"><span class="n">8</span>Break it on purpose — rename something</h3>
+<p class="why"><b>Why:</b> a rename is a breaking change. The correct answer is a refusal.</p>
+<pre><code>Rename `total` to `grand_total` in the orders API response.</code></pre>
+<div class="check"><span class="tick">✓</span><span>It refuses to run it as one change and proposes three: add <code>grand_total</code> → move every consumer → remove <code>total</code>. If it just did the rename, the contract rule is not loading — check <code>.github/instructions/cross-repo-contracts.instructions.md</code> has <code>applyTo: "**"</code>.</span></div>
+</section>
+<section class="part" id="copilot-part-4-every-day-the-whole-thing-in-one-"><h2>Part 4 · Every day (the whole thing in one table)</h2>
+<div class="tablewrap"><table><thead><tr><th>You want to…</th><th>Where</th><th>Do this</th></tr></thead><tbody><tr><td>Fix a typo, ask a question</td><td>That repo, VS Code</td><td>Plain chat, no agent selected. The framework stays out of your way.</td></tr><tr><td>Do a medium/complex job inside one repo</td><td>That repo, VS Code</td><td>Pick <code>&lt;repo&gt;-orchestrator</code> in the dropdown. Describe the job. Read the handoff and the return.</td></tr><tr><td>Same, from a terminal</td><td>That repo, CLI</td><td><code>cd</code> into the repo, run <code>copilot</code>, use <code>--agent=&lt;repo&gt;-orchestrator</code> or pick it inside. Same agents, same rules.</td></tr><tr><td>Ship what you did</td><td>Any</td><td><code>/commit-push-pr</code> — it refuses to push to <code>main</code>, builds first, never stages secrets.</td></tr><tr><td>Change something in two or more repos</td><td>The workspace (<code>.code-workspace</code>)</td><td>Pick <code>&lt;team&gt;-orchestrator</code>. It orders the work producer → consumer and delegates one repo at a time.</td></tr><tr><td>Ask "is this API change safe?"</td><td>The workspace</td><td>Pick <code>contract-guardian</code>. It greps every consumer and answers with file:line, never an opinion.</td></tr><tr><td>Correct the agent ("no, use X")</td><td>Any</td><td>Then type <code>/correction-capture</code>. It turns the correction into a sticky note so it never happens again. Never accept "I'll remember".</td></tr><tr><td>Say "we'll do that later"</td><td>Any</td><td>It must be written into <code>docs/&lt;AREA&gt;_BACKLOG.md</code> before the chat ends. Spoken follow-ups vanish.</td></tr><tr><td>Push to production</td><td>That repo</td><td>Same session: update <code>CHANGELOG.md</code>, the affected <code>docs/ai-context/</code> map, and <code>PROJECT.md</code> "what is live where". A fresh agent sees only what's in git.</td></tr><tr><td>Hand a well-defined task to the cloud agent</td><td>GitHub issue</td><td>One issue per repo, assigned to that repo's orchestrator agent. It cannot touch two repos in one run.</td></tr></tbody></table></div>
+</section>
+<section class="part" id="copilot-part-5-when-it-goes-wrong"><h2>Part 5 · When it goes wrong</h2>
+<div class="tablewrap"><table><thead><tr><th>You see</th><th>It usually means</th><th>Fix</th></tr></thead><tbody><tr><td>The agent isn't in the dropdown</td><td>File name or frontmatter</td><td>Must end in <code>.agent.md</code>; <code>name:</code> must match; valid YAML between the <code>---</code> lines. Reload Window.</td></tr><tr><td>A sticky note never shows up</td><td>Its <code>applyTo:</code> glob doesn't match</td><td>Run <code>find . -path "&lt;the glob&gt;"</code> — if nothing prints, the glob is wrong. Globs are relative to that repo's root.</td></tr><tr><td>The wrong repo's worker answered</td><td>Name collision on the desk</td><td>From the workspace, invoke orchestrators only. The workspace router says so in rule 4.</td></tr><tr><td><code>delegate.sh</code> exits with "handoff does not carry repo:"</td><td>The handoff file is missing its <code>repo:</code> line</td><td>Add <code>repo: &lt;name&gt;</code> exactly as in <code>workspace.json</code>. A note for one repo must never run in another.</td></tr><tr><td><code>delegate.sh</code>: command not found / no such repo</td><td><code>copilot</code> not on PATH, or a bad <code>path</code> in the manifest</td><td><code>copilot --version</code>; then <code>jq '.repos[].path' workspace.json</code> and check each folder exists.</td></tr><tr><td>A hook never fires</td><td>Installed mid-session, or in the wrong place</td><td>Restart the session. Team hooks live in <code>.github/hooks/*.json</code> (committed); <code>~/.copilot/hooks</code> is only you. Timeouts fail open — keep checks fast.</td></tr><tr><td>The specialist refused the task</td><td>The handoff was vague</td><td>That's correct behaviour. Add the missing field it named (usually <code>failure_condition</code> or evidence on a claim) and re-send.</td></tr><tr><td>The manager is editing code itself</td><td>Specialists too narrow, or the wrong agent selected</td><td>Check the dropdown. If it really is the orchestrator, widen a specialist's scope rather than letting the manager code.</td></tr><tr><td>Something worked last month and now doesn't</td><td>The platform moved</td><td>Re-run <code>prompts/REFINEMENT-PROMPT.md</code>; its "platform drift" section re-checks the Copilot docs. Three framework claims went stale in three months once already (Pitfall 20).</td></tr></tbody></table></div>
+</section>
+<section class="part" id="copilot-the-checklist-print-this"><h2>The checklist (print this)</h2>
+<div class="eyebrow">Per person, once</div>
+<ul class="print"><li><code>code</code>, <code>copilot</code>, <code>git</code>, <code>jq</code> all print a version</li><li>Framework cloned to <code>~/frameworks/copilot</code></li></ul>
+<div class="eyebrow">Per repo</div>
+<ul class="print"><li>Branch <code>setup/copilot-orchestration</code></li><li>INVENTORY prompt → specialist list agreed</li><li>BOOTSTRAP prompt → files created; orchestrator named <code>&lt;repo&gt;-orchestrator</code></li><li>Reload Window → agents visible in the dropdown</li><li>One real small job → saw <code>handoff:</code> and <code>return:</code></li><li>PR merged; a teammate sees the agents too</li><li>(later) hooks installed, session restarted, tested</li></ul>
+<div class="eyebrow">Per team, once — after ≥ 2 repos are done</div>
+<ul class="print"><li>Workspace repo created; 14 template files in place; no <code>&lt;PLACEHOLDER&gt;</code> left</li><li><code>workspace.json</code>: every repo + every contract filled</li><li><code>scripts/sync-repos.sh</code> → no warnings</li><li>Opened the <code>.code-workspace</code>; workspace orchestrator + each repo's orchestrator visible</li><li>Additive cross-repo job → producer first, two handoffs, consumers grepped</li><li>Rename job → refused and split into add / move / remove</li></ul>
+</section>
+<section class="part" id="copilot-cross-links"><h2>Cross-links</h2>
+<ul class="list"><li><code>docs/09-RUNBOOK.md</code> — the long version of Part 2.</li><li><code>docs/10-MECHANICAL-ENFORCEMENT.md</code> — hooks (Part 2 step 7).</li><li><code>docs/12-MULTI-REPO-WORKSPACES.md</code> — the long version of Part 3, with the verified platform behaviour behind every step.</li><li><code>docs/11-PROJECT-TRUTH-AND-LEARNINGS.md</code> — why the backlog, <code>PROJECT.md</code> and "push = freshen docs" rules exist.</li><li><code>docs/08-COMMON-PITFALLS.md</code> — Part 5, in full.</li></ul>
+</section>
+</div><div class="edition" id="ed-claude" role="tabpanel" aria-labelledby="tab-claude" data-active="false">
+<div class="edmeta"><span>Source: <a href="https://github.com/abhinavsehgal/claude-orchestration-framework/blob/main/docs/00-QUICKSTART.md">docs/00-QUICKSTART.md</a> (v1.2.0)</span><span>This page is generated from that file — if they disagree, the file wins.</span></div>
+<div class="note"><span>The whole framework as one step-by-step walk. Every step says <b>what to do</b>, <b>why</b>, <b>what to paste</b>, and <b>how you know it worked</b>. Written for someone who has never seen the framework; the long version of each part is linked. Based on v1.2.0 and the Claude Code docs as verified on 2026-08-22 — if a step here disagrees with the chapter it links to, the chapter wins.  <b>Time:</b> 15 min once per person · 2–4 h per repo · one afternoon for the workspace.</span></div>
+<section class="part" id="claude-part-0-the-words-read-once"><h2>Part 0 · The words (read once)</h2>
+<p>Nine words. Everything else in this guide is made of these.</p>
+<div class="tablewrap"><table><thead><tr><th>Word</th><th>Means</th></tr></thead><tbody><tr><td><b>Orchestrator</b></td><td>The manager. Reads your task, decides who should do it, writes them a note, checks their work. <b>Never touches code itself.</b></td></tr><tr><td><b>Specialist</b></td><td>A worker who does one kind of job (the API, the database, the UI, testing…). Touches only its own corner.</td></tr><tr><td><b>Handoff</b></td><td>The note the manager writes the worker: what to do, what the manager already knows (with proof), what would prove the manager wrong, what not to touch.</td></tr><tr><td><b>Return</b></td><td>The note the worker writes back: what it checked, what it changed, what it couldn't verify, what the manager must not pass on as fact.</td></tr><tr><td><b>Rule</b></td><td>A sticky note on a drawer. When Claude reads a file in that drawer, the note appears. Lives in <code>.claude/rules/</code>, scoped with <code>paths:</code>.</td></tr><tr><td><b>Skill</b></td><td>A recipe card for a job you do again and again (<code>/commit-push-pr</code>, the engineering playbook). Lives in <code>.claude/skills/</code>.</td></tr><tr><td><b>Hook</b></td><td>A tripwire. Runs a script when something happens (before an edit, when Claude tries to stop). Optional — add later.</td></tr><tr><td><b>Workspace</b></td><td>One desk with every repo's folder on it, plus one manager who only coordinates between repos. Its own small git repo.</td></tr><tr><td><b>Contract</b></td><td>The promise between a service and everyone who calls it (an API shape, an event payload, a shared package). The thing that breaks when two repos change at different times.</td></tr></tbody></table></div>
+</section>
+<section class="part" id="claude-part-1-before-you-start-15-minutes-once-"><h2>Part 1 · Before you start (15 minutes, once per person)</h2>
+<h3 class="step"><span class="n">1</span>Make sure you have the four tools</h3>
+<p class="why"><b>Why:</b> Claude Code runs the agents; git and <code>jq</code> are used by the workspace scripts; node runs hooks.</p>
+<pre><code><span class="c"># Each of these should print a version, not an error</span>
+claude --version       <span class="c"># Claude Code 2.x or later</span>
+git --version
+jq --version
+node --version         <span class="c"># hooks are node scripts</span></code></pre>
+<p>Missing <code>claude</code>? Install from the Claude Code docs (code.claude.com). Missing <code>jq</code>? <code>brew install jq</code> on a Mac, <code>winget install jqlang.jq</code> on Windows.</p>
+<div class="check"><span class="tick">✓</span><span><b>You know it worked when:</b> all four print a version, and <code>claude</code> in any folder opens a session.</span></div>
+<h3 class="step"><span class="n">2</span>Get the framework onto your disk</h3>
+<p class="why"><b>Why:</b> the framework is a folder of templates and two copy-paste prompts. You never install it into your project — you point Claude at it.</p>
+<pre><code>mkdir -p ~/frameworks
+git clone https://github.com/abhinavsehgal/claude-orchestration-framework.git ~/frameworks/claude
+echo ~/frameworks/claude      <span class="c"># remember this path — you will paste it into the prompts</span></code></pre>
+<div class="check"><span class="tick">✓</span><span><code>ls ~/frameworks/claude</code> shows <code>docs  prompts  templates</code>.</span></div>
+<h3 class="step"><span class="n">3</span>Read one file</h3>
+<p class="why"><b>Why:</b> twenty minutes now saves a confused afternoon later. Skip the rest of the docs for now.</p>
+<p>Open <code>docs/09-RUNBOOK.md</code>. That is the long version of Part 2 below.</p>
+<div class="check"><span class="tick">✓</span><span>You can say in one sentence what the orchestrator does and does not do. (It coordinates. It never edits.)</span></div>
+</section>
+<section class="part" id="claude-part-2-one-repo-2-4-hours-repeat-for-eve"><h2>Part 2 · One repo (2–4 hours — repeat for every repo)</h2>
+<p>Every repo gets its own manager and its own workers. Yes, every one — even a tiny service. The workspace in Part 3 only works if each repo already has this. Start with the repo you know best.</p>
+<h3 class="step"><span class="n">1</span>Open the repo on a fresh branch</h3>
+<p class="why"><b>Why:</b> the setup creates new files. A clean branch means you can throw it all away if you don't like it.</p>
+<pre><code>cd ~/code/&lt;your-repo&gt;
+git checkout main &amp;&amp; git pull
+git checkout -b setup/claude-orchestration
+claude</code></pre>
+<div class="check"><span class="tick">✓</span><span><code>git status</code> is clean; the session banner shows the repo path.</span></div>
+<h3 class="step"><span class="n">2</span>Run the INVENTORY prompt (look, don't touch)</h3>
+<p class="why"><b>Why:</b> Claude scans the repo and <i>proposes</i> which specialists this repo needs. It writes nothing. You correct the proposal before anything is created.</p>
+<p>Open <code>~/frameworks/claude/prompts/INVENTORY-PROMPT.md</code>, copy all of it, paste it into the session. Replace <code>&lt;framework path&gt;</code> with the path from Part 1 step 2. Send.</p>
+<p>It comes back with: a list of proposed specialists (usually 4–8), proposed rule files with their <code>paths:</code> globs, and a list of <b>Open Questions</b>. Answer the questions. Cross out specialists that feel wrong. Fewer is better.</p>
+<div class="watch"><span class=bang>!</span><span><b>The orchestrator must be named <code>&lt;repo-name&gt;-orchestrator</code></b> (for example <code>orders-orchestrator</code>). Not just <code>orchestrator</code>. In Part 3 every repo's manager is delegated to by name; names must be unique.</span></div>
+<div class="check"><span class="tick">✓</span><span>You have a short list of specialist names you agree with, and <code>git status</code> is still clean.</span></div>
+<h3 class="step"><span class="n">3</span>Run the BOOTSTRAP prompt (now it builds)</h3>
+<p class="why"><b>Why:</b> this creates all the files. It first <b>backs up</b> anything already in <code>CLAUDE.md</code> and <code>.claude/</code> to <code>.claude-pre-bootstrap-backup/</code> and asks before overwriting — so a <code>CLAUDE.md</code> your team already wrote is safe (you get a 3-pane diff before the merge).</p>
+<p>In the <b>same session</b>, paste <code>~/frameworks/claude/prompts/BOOTSTRAP-PROMPT.md</code> (path replaced again). It shows you each file before saving. Say yes to each one you agree with.</p>
+<p>What it creates:</p>
+<div class="tablewrap"><table><thead><tr><th>File</th><th>What it is</th></tr></thead><tbody><tr><td><code>CLAUDE.md</code></td><td>The router. Short (&lt; 200 lines). Loaded into every session.</td></tr><tr><td><code>.claude/agents/&lt;repo&gt;-orchestrator.md</code></td><td>The manager.</td></tr><tr><td><code>.claude/agents/&lt;name&gt;.md</code> ×N</td><td>The workers.</td></tr><tr><td><code>.claude/rules/&lt;area&gt;.md</code></td><td>The sticky notes, each with a <code>paths:</code> glob.</td></tr><tr><td><code>.claude/skills/&lt;repo&gt;-engineering/SKILL.md</code></td><td>The six-gate working method every task follows.</td></tr><tr><td><code>docs/ai-context/PROJECT.md</code></td><td>"What is true right now" — what's live where, verified commands.</td></tr><tr><td><code>docs/ai-context/LEARNINGS.md</code></td><td>Decisions, failed approaches, corrections.</td></tr><tr><td><code>docs/ai-context/HANDOFF_SCHEMA.md</code>, <code>INDEX.md</code>, <code>GLOSSARY.md</code></td><td>The note format, the map, the one-name-per-thing list.</td></tr><tr><td><code>docs/&lt;AREA&gt;_BACKLOG.md</code></td><td>Where "we'll do it later" must be written down.</td></tr></tbody></table></div>
+<div class="check"><span class="tick">✓</span><span><code>ls .claude/agents</code> lists your orchestrator and specialists. Your normal build still passes.</span></div>
+<h3 class="step"><span class="n">4</span>Check the manager shows up</h3>
+<p class="why"><b>Why:</b> an agent file with a typo in its <code>name:</code> silently doesn't load.</p>
+<p>Exit the session (<code>/exit</code>) and start a new one: <code>claude</code>. Type <code>/agents</code>.</p>
+<div class="check"><span class="tick">✓</span><span>You see <code>&lt;repo&gt;-orchestrator</code> and every specialist. <code>/context</code> lists <code>CLAUDE.md</code> under <b>Memory files</b>.</span></div>
+<div class="watch"><span class=bang>!</span><span>Not there? The file must be in <code>.claude/agents/</code>, the <code>name:</code> line must match what you expect, and the YAML between the <code>---</code> lines must be valid. Fix, restart the session, look again.</span></div>
+<h3 class="step"><span class="n">5</span>Give it one real, small job</h3>
+<p class="why"><b>Why:</b> the only proof the setup works is watching a handoff go out and a return come back.</p>
+<pre><code>claude --agent &lt;repo&gt;-orchestrator</code></pre>
+<p>Type a real bug or tiny feature from your tracker — one that needs maybe 30 minutes of human work.</p>
+<p>Watch for three things: it restates the task; it writes a <code>handoff:</code> block (YAML) with <code>claims</code>, <code>failure_condition</code>, <code>in_scope</code>; the specialist answers with a <code>return:</code> block that lists <code>files_changed</code> and <code>tests_run</code>.</p>
+<div class="check"><span class="tick">✓</span><span>You saw both blocks. The change is small and correct. If the specialist <i>refused</i> a vague handoff — that's the framework working, not failing.</span></div>
+<h3 class="step"><span class="n">6</span>Commit, open a PR, merge</h3>
+<p class="why"><b>Why:</b> teammates get the agents the moment they pull. The backup folder stays local (gitignored).</p>
+<pre><code>git add CLAUDE.md .claude/ docs/ .gitignore
+git commit -m "chore: bootstrap Claude Code orchestration framework"
+git push -u origin setup/claude-orchestration
+gh pr create --base main --title "Bootstrap Claude orchestration"</code></pre>
+<div class="check"><span class="tick">✓</span><span>PR merged. A teammate pulls, starts <code>claude</code>, types <code>/agents</code>, and sees the same list.</span></div>
+<h3 class="step"><span class="n">7</span>Later, not now: turn on hooks</h3>
+<p class="why"><b>Why:</b> hooks are tripwires (block a stop while the build is red; force a correction to become a rule; refuse to end a turn after a production push with stale docs). Add them only after you've seen people skip the written rules. <code>docs/10-HOOK-HARDENING.md</code> is the recipe.</p>
+<pre><code><span class="c"># when you're ready:</span>
+mkdir -p .claude/scripts
+for f in ~/frameworks/claude/templates/hooks/*.mjs.template; do cp "$f" ".claude/scripts/$(basename "$f" .template)"; done
+<span class="c"># fill the &lt;PLACEHOLDERS&gt; in each script, then merge templates/hooks/settings.json.snippet into .claude/settings.json</span></code></pre>
+<div class="watch"><span class=bang>!</span><span><code>settings.json</code> is read when a session starts. After installing: <code>/exit</code>, start a new <code>claude</code>, then test. Stop hooks talk on <b>stderr</b>; a build killed by the cap is <i>inconclusive</i>, not failed.</span></div>
+<p><b>Now do Part 2 again for the next repo.</b> Two repos done with working orchestrators is the minimum before Part 3.</p>
+</section>
+<section class="part" id="claude-part-3-the-workspace-one-afternoon-once-"><h2>Part 3 · The workspace (one afternoon, once per team)</h2>
+<p>Only when tasks keep saying "change the orders service <i>and</i> the web app". The workspace is a small extra repo that holds one coordinating manager, a map of who owns what, and the rules for changing contracts. It holds <b>no workers</b> — they stay in their repos. Long version: <code>docs/12-MULTI-REPO-WORKSPACES.md</code>.</p>
+<div class="note"><span>Two Claude Code facts shape everything below (verified 2026-08-22): when you start <code>claude</code> in the workspace folder, a child repo's <code>CLAUDE.md</code> and rules load as Claude reads its files — but a child's <b>hooks and permission rules never load</b>, and a child's agents are not visible. So the workspace never edits a child itself; it hands each job to the child's own orchestrator in the child's own session, where everything the child's team built still applies.</span></div>
+<h3 class="step"><span class="n">1</span>Create an empty repo and clone it</h3>
+<p class="why"><b>Why:</b> the workspace is its own repo so the map and the rules are versioned and shared. It has no CI and deploys nothing.</p>
+<pre><code>gh repo create &lt;team&gt;-workspace --private --clone
+cd &lt;team&gt;-workspace</code></pre>
+<div class="check"><span class="tick">✓</span><span>You're inside an empty folder with a <code>.git</code>.</span></div>
+<h3 class="step"><span class="n">2</span>Copy the workspace templates into place</h3>
+<p class="why"><b>Why:</b> thirteen files, each with a fixed home. <code>templates/workspace/README.md</code> has the same table.</p>
+<pre><code>T=~/frameworks/claude/templates/workspace
+mkdir -p .claude/agents .claude/rules .claude/scripts docs/ai-context
+cp $T/CLAUDE.md.template                       CLAUDE.md
+cp $T/workspace.json.template                  workspace.json
+cp $T/gitignore.template                       .gitignore
+cp $T/orchestrator-agent.md.template           .claude/agents/&lt;team&gt;-orchestrator.md
+cp $T/contract-guardian-agent.md.template      .claude/agents/contract-guardian.md
+cp $T/service-mapper-agent.md.template         .claude/agents/service-mapper.md
+cp $T/cross-repo-contracts.md.template         .claude/rules/cross-repo-contracts.md
+cp $T/sync-repos.sh.template                   .claude/scripts/sync-repos.sh
+cp $T/delegate.sh.template                     .claude/scripts/delegate.sh
+cp $T/return-schema.json                       .claude/scripts/return-schema.json
+cp $T/settings.json.snippet                    .claude/settings.json
+cp $T/SERVICE_MAP.md.template                  docs/ai-context/SERVICE_MAP.md
+cp $T/CONTRACTS.md.template                    docs/ai-context/CONTRACTS.md
+cp ~/frameworks/claude/templates/HANDOFF_SCHEMA.md.template docs/ai-context/HANDOFF_SCHEMA.md
+chmod +x .claude/scripts/*.sh</code></pre>
+<div class="check"><span class="tick">✓</span><span><code>find . -type f -not -path './.git/*'</code> matches the layout in chapter 12.</span></div>
+<h3 class="step"><span class="n">3</span>Fill in the blanks — mostly in one file</h3>
+<p class="why"><b>Why:</b> <code>workspace.json</code> is the source of truth: which repos, where they live, what each one's manager is called, every contract between them, and how much a delegated session may do. The scripts read it; you never hard-code a path anywhere else.</p>
+<p>Open <code>workspace.json</code>. For each repo fill <code>name</code>, <code>path</code> (e.g. <code>services/orders</code>), <code>url</code>, <code>default_branch</code>, <code>orchestrator</code> (exactly the name from Part 2 — <code>orders-orchestrator</code>), <code>build</code>, <code>test</code>. For each contract fill <code>producer</code>, <code>consumers</code>, <code>spec</code>, and a one-line <code>versioning</code> rule. Under <code>delegation</code>, keep <code>allowed_tools</code> narrow — it is the child's entire permission budget.</p>
+<p>Then search every copied file for <code>&lt;</code> and replace the remaining placeholders (<code>&lt;WORKSPACE_SLUG&gt;</code>, <code>&lt;REPO_1_PATH&gt;</code>…). The <code>deny</code> block in <code>.claude/settings.json</code> must list every child path — that is what makes "the workspace never writes to a child" a fact, not a wish.</p>
+<div class="check"><span class="tick">✓</span><span><code>grep -rn "&lt;[A-Z_0-9]*&gt;" . --exclude-dir=.git</code> prints nothing. <code>jq . workspace.json</code> and <code>jq . .claude/settings.json</code> both print valid JSON.</span></div>
+<h3 class="step"><span class="n">4</span>Pull every repo onto the desk</h3>
+<p class="why"><b>Why:</b> the children are plain clones in gitignored folders — disposable. The script clones what's missing and fetches what exists. It <b>never</b> switches or resets a branch; each repo's team owns that.</p>
+<pre><code>.claude/scripts/sync-repos.sh</code></pre>
+<div class="check"><span class="tick">✓</span><span>One <code>==</code> line per repo, no <code>⚠</code> warnings. A warning means that repo has no <code>&lt;repo&gt;-orchestrator</code> yet — go back to Part 2 for it.</span></div>
+<h3 class="step"><span class="n">5</span>Start the workspace session</h3>
+<p class="why"><b>Why:</b> the only intended way to use the workspace is <i>as</i> its orchestrator.</p>
+<pre><code>claude --agent &lt;team&gt;-orchestrator</code></pre>
+<div class="check"><span class="tick">✓</span><span><code>/agents</code> shows <code>&lt;team&gt;-orchestrator</code>, <code>contract-guardian</code>, <code>service-mapper</code> — and <b>not</b> the children's agents. That is correct: children are reached through <code>delegate.sh</code>, not spawned here.</span></div>
+<h3 class="step"><span class="n">6</span>Commit the workspace</h3>
+<pre><code>git add -A
+git commit -m "chore: bootstrap cross-repo workspace"
+git push -u origin main</code></pre>
+<div class="check"><span class="tick">✓</span><span><code>git status</code> shows no child repo files — the clones are ignored, the map and rules are committed.</span></div>
+<h3 class="step"><span class="n">7</span>The first cross-repo job — add something</h3>
+<p class="why"><b>Why:</b> the workspace's whole job is ordering changes across a contract: the service that <i>produces</i> a field changes first, is deployed, and only then do the apps that <i>read</i> it change.</p>
+<p>In the workspace session, ask for something additive that crosses one contract:</p>
+<pre><code>Add an `estimated_delivery` field to the orders API response and show it on the web order page.</code></pre>
+<p>Watch for: it reads <code>CONTRACTS.md</code>; it says "producer first: orders, then web"; it writes one handoff per repo to <code>.claude/handoffs/</code>, each with <code>repo:</code> and <code>contract_impact: additive</code>; it runs <code>.claude/scripts/delegate.sh orders &lt;handoff&gt;</code> — which starts <code>claude -p --agent orders-orchestrator</code> <i>inside</i> the orders repo, so that repo's rules and hooks apply — and reads the <code>return</code> from the JSON it prints.</p>
+<div class="check"><span class="tick">✓</span><span>Two delegations, in that order. Each return lists <code>consumers_grepped</code>. <code>git status</code> in the workspace root is clean — the workspace itself changed nothing. <code>.claude/returns/</code> holds the two JSON results, each with a <code>session_id</code> you could <code>--resume</code>.</span></div>
+<h3 class="step"><span class="n">8</span>Break it on purpose — rename something</h3>
+<p class="why"><b>Why:</b> a rename is a breaking change. The correct answer is a refusal.</p>
+<pre><code>Rename `total` to `grand_total` in the orders API response.</code></pre>
+<div class="check"><span class="tick">✓</span><span>It refuses to run it as one change and proposes three: add <code>grand_total</code> → move every consumer → remove <code>total</code>. If it just did the rename, the contract rule is not loading — check <code>.claude/rules/cross-repo-contracts.md</code> has no <code>paths:</code> (so it loads every session) and <code>/context</code> lists it.</span></div>
+</section>
+<section class="part" id="claude-part-4-every-day-the-whole-thing-in-one-"><h2>Part 4 · Every day (the whole thing in one table)</h2>
+<div class="tablewrap"><table><thead><tr><th>You want to…</th><th>Where</th><th>Do this</th></tr></thead><tbody><tr><td>Fix a typo, ask a question</td><td>That repo</td><td>Plain <code>claude</code>. The framework stays out of your way.</td></tr><tr><td>Do a medium/complex job inside one repo</td><td>That repo</td><td><code>claude --agent &lt;repo&gt;-orchestrator</code>. Describe the job. Read the handoff and the return.</td></tr><tr><td>Work on two things at once without collisions</td><td>That repo</td><td><code>claude --worktree</code> — an isolated checkout per session; never run two builds in one directory.</td></tr><tr><td>Ship what you did</td><td>Any</td><td><code>/commit-push-pr</code> — it refuses to push to <code>main</code>, builds first, never stages secrets.</td></tr><tr><td>Change something in two or more repos</td><td>The workspace</td><td><code>claude --agent &lt;team&gt;-orchestrator</code>. It orders the work producer → consumer and delegates one repo at a time.</td></tr><tr><td>Ask "is this API change safe?"</td><td>The workspace</td><td>Ask the orchestrator to run <code>contract-guardian</code>. It greps every consumer and answers with file:line, never an opinion.</td></tr><tr><td>Correct Claude ("no, use X")</td><td>Any</td><td>With hooks: it is stopped and asked to draft a rule patch. Without: say "make that a rule". Never accept "I'll remember" — memory is machine-local.</td></tr><tr><td>Say "we'll do that later"</td><td>Any</td><td>It must be written into <code>docs/&lt;AREA&gt;_BACKLOG.md</code> before the turn ends. Spoken follow-ups vanish.</td></tr><tr><td>Push to production</td><td>That repo</td><td>Same turn: update <code>CHANGELOG.md</code>, the affected <code>docs/ai-context/</code> map, and <code>PROJECT.md</code> "what is live where". With hooks, the doc-freshness gate refuses to end the turn until you do.</td></tr><tr><td>Run a job from a script or CI</td><td>That repo</td><td><code>claude -p "&lt;task&gt;" --agent &lt;repo&gt;-orchestrator --output-format json</code> (no <code>--bare</code> if you want the repo's hooks and rules).</td></tr></tbody></table></div>
+</section>
+<section class="part" id="claude-part-5-when-it-goes-wrong"><h2>Part 5 · When it goes wrong</h2>
+<div class="tablewrap"><table><thead><tr><th>You see</th><th>It usually means</th><th>Fix</th></tr></thead><tbody><tr><td>The agent isn't in <code>/agents</code></td><td>Wrong folder or frontmatter</td><td>Must be in <code>.claude/agents/</code>; <code>name:</code> must match; valid YAML between the <code>---</code> lines. Restart the session.</td></tr><tr><td>A rule never shows up</td><td>Its <code>paths:</code> glob doesn't match, or the file was never <i>read</i></td><td>Run <code>find . -path "&lt;the glob&gt;"</code>. Rules load when Claude reads a matching file; a brand-new file written blind matches nothing — that is what the optional rule-surfacing hook covers.</td></tr><tr><td>From the workspace, the children's agents are missing</td><td>By design</td><td>Children are reached through <code>delegate.sh</code>. To spawn a child's agents in-session (investigation only), start with <code>claude --add-dir &lt;child&gt;</code>.</td></tr><tr><td><code>delegate.sh</code> exits with "handoff does not carry repo:"</td><td>The handoff file is missing its <code>repo:</code> line</td><td>Add <code>repo: &lt;name&gt;</code> exactly as in <code>workspace.json</code>. A note for one repo must never run in another.</td></tr><tr><td><code>delegate.sh</code> hangs or asks nothing and fails</td><td><code>-p</code> never prompts; a tool wasn't pre-approved</td><td>Widen <code>delegation.allowed_tools</code> in <code>workspace.json</code> <i>one tool at a time</i>; check the child's result JSON under <code>.claude/returns/</code>.</td></tr><tr><td>The workspace session tried to edit a child and was denied</td><td>The deny block did its job</td><td>Correct behaviour. Delegate instead.</td></tr><tr><td>A hook never fires</td><td>Installed mid-session, or wrote to the wrong channel</td><td><code>/exit</code> and start a new session. Stop hooks must write to <b>stderr</b> and exit 2; PreToolUse hooks write to stdout.</td></tr><tr><td>The build-gate blocks on a "failed" build that was just slow</td><td>The cap is too low</td><td>Raise <code>BUILD_TIMEOUT_MS</code>; a killed run must exit 0 (the v1.2 template does).</td></tr><tr><td>The specialist refused the task</td><td>The handoff was vague</td><td>That's correct behaviour. Add the missing field it named (usually <code>failure_condition</code> or evidence on a claim) and re-send.</td></tr><tr><td>Something worked last month and now doesn't</td><td>The platform moved</td><td>Re-run <code>prompts/REFINEMENT-PROMPT.md</code>; its "platform drift" section re-checks the Claude Code docs. Two framework claims went stale in three months once already (Pitfall 18).</td></tr></tbody></table></div>
+</section>
+<section class="part" id="claude-the-checklist-print-this"><h2>The checklist (print this)</h2>
+<div class="eyebrow">Per person, once</div>
+<ul class="print"><li><code>claude</code>, <code>git</code>, <code>jq</code>, <code>node</code> all print a version</li><li>Framework cloned to <code>~/frameworks/claude</code></li></ul>
+<div class="eyebrow">Per repo</div>
+<ul class="print"><li>Branch <code>setup/claude-orchestration</code></li><li>INVENTORY prompt → specialist list agreed</li><li>BOOTSTRAP prompt → files created; orchestrator named <code>&lt;repo&gt;-orchestrator</code></li><li>New session → <code>/agents</code> lists them; <code>/context</code> lists <code>CLAUDE.md</code></li><li>One real small job via <code>claude --agent &lt;repo&gt;-orchestrator</code> → saw <code>handoff:</code> and <code>return:</code></li><li>PR merged; a teammate sees the agents too</li><li>(later) hooks installed in <code>.claude/settings.json</code>, session restarted, tested</li></ul>
+<div class="eyebrow">Per team, once — after ≥ 2 repos are done</div>
+<ul class="print"><li>Workspace repo created; 13 template files in place; no <code>&lt;PLACEHOLDER&gt;</code> left</li><li><code>workspace.json</code>: every repo + every contract filled; <code>allowed_tools</code> narrow</li><li><code>.claude/settings.json</code> deny block lists every child path</li><li><code>.claude/scripts/sync-repos.sh</code> → no warnings</li><li><code>claude --agent &lt;team&gt;-orchestrator</code> → <code>/agents</code> shows the three workspace agents only</li><li>Additive cross-repo job → producer first, two delegations, consumers grepped, workspace tree clean</li><li>Rename job → refused and split into add / move / remove</li></ul>
+</section>
+<section class="part" id="claude-cross-links"><h2>Cross-links</h2>
+<ul class="list"><li><code>docs/09-RUNBOOK.md</code> — the long version of Part 2.</li><li><code>docs/10-HOOK-HARDENING.md</code> — hooks (Part 2 step 7).</li><li><code>docs/12-MULTI-REPO-WORKSPACES.md</code> — the long version of Part 3, with the verified platform behaviour behind every step.</li><li><code>docs/11-PROJECT-TRUTH-AND-LEARNINGS.md</code> — why the backlog, <code>PROJECT.md</code> and "push = freshen docs" rules exist.</li><li><code>docs/06-INVOCATION-MODES.md</code> — <code>claude</code> vs <code>--agent</code> vs <code>-p</code> vs worktrees.</li><li><code>docs/08-COMMON-PITFALLS.md</code> — Part 5, in full.</li></ul>
+</section>
+</div><div class="edition" id="ed-ios" role="tabpanel" aria-labelledby="tab-ios" data-active="false">
+<div class="edmeta"><span>Source: <a href="https://github.com/abhinavsehgal/copilot-ios-orchestration-framework/blob/main/docs/00-QUICKSTART.md">docs/00-QUICKSTART.md</a> (v1.1.0)</span><span>This page is generated from that file — if they disagree, the file wins.</span></div>
+<div class="note"><span>The whole framework as one step-by-step walk. Every step says <b>what to do</b>, <b>why</b>, <b>what to paste</b>, and <b>how you know it worked</b>. Written for an iOS engineer who has never seen the framework; the long version of each part is linked. Based on v1.1.0 and the GitHub Copilot + VS Code docs as verified on 2026-08-22 — if a step here disagrees with the chapter it links to, the chapter wins.  <b>Time:</b> 15 min once per person · 2–4 h per repo · one afternoon for the workspace.</span></div>
+<section class="part" id="ios-part-0-the-words-read-once"><h2>Part 0 · The words (read once)</h2>
+<p>Nine words. Everything else in this guide is made of these.</p>
+<div class="tablewrap"><table><thead><tr><th>Word</th><th>Means</th></tr></thead><tbody><tr><td><b>Orchestrator</b></td><td>The manager. Reads your task, decides who should do it, writes them a note, checks their work. <b>Never touches code itself.</b></td></tr><tr><td><b>Specialist</b></td><td>A worker who does one kind of job (the API, the database, the UI, testing…). Touches only its own corner.</td></tr><tr><td><b>Handoff</b></td><td>The note the manager writes the worker: what to do, what the manager already knows (with proof), what would prove the manager wrong, what not to touch.</td></tr><tr><td><b>Return</b></td><td>The note the worker writes back: what it checked, what it changed, what it couldn't verify, what the manager must not pass on as fact.</td></tr><tr><td><b>Instruction file</b></td><td>A sticky note on a drawer. When anyone opens files in that drawer, the note appears. Lives in <code>.github/instructions/</code>.</td></tr><tr><td><b>Skill</b></td><td>A recipe card for a job you do again and again (<code>/commit-push-pr</code>, <code>/verify-build</code>). Lives in <code>.github/skills/</code>.</td></tr><tr><td><b>Hook</b></td><td>A tripwire. Runs a script when something happens (before a tool runs, when the agent tries to stop). Optional — add later.</td></tr><tr><td><b>Workspace</b></td><td>One desk with every repo's folder on it, plus one manager who only coordinates between repos. Its own small git repo.</td></tr><tr><td><b>Contract</b></td><td>The promise between a service and everyone who calls it (an API shape, an event payload, a shared package). The thing that breaks when two repos change at different times.</td></tr></tbody></table></div>
+</section>
+<section class="part" id="ios-part-1-before-you-start-15-minutes-once-"><h2>Part 1 · Before you start (15 minutes, once per person)</h2>
+<h3 class="step"><span class="n">1</span>Make sure you have the five tools</h3>
+<p class="why"><b>Why:</b> Xcode builds the app; VS Code runs the agents (Copilot's custom agents, skills and hooks live there, not in Xcode); the Copilot CLI runs them from a terminal and is what the workspace uses to reach into other repos; git and <code>jq</code> are used by the workspace scripts.</p>
+<pre><code><span class="c"># Each of these should print a version, not an error</span>
+xcodebuild -version
+code --version
+copilot --version      <span class="c"># the GitHub Copilot CLI (the agentic one, not `gh copilot`)</span>
+git --version
+jq --version
+node --version         <span class="c"># only needed if you later turn on hooks</span></code></pre>
+<p>Missing <code>copilot</code>? Install it from GitHub's Copilot CLI page (docs.github.com → Copilot → Copilot CLI → Install). Missing <code>jq</code>? <code>brew install jq</code> on a Mac, <code>winget install jqlang.jq</code> on Windows.</p>
+<div class="check"><span class="tick">✓</span><span><b>You know it worked when:</b> all six print a version, and in VS Code the Copilot Chat panel opens with <b>Agent</b> in the mode dropdown. (Keep Xcode for building, running and Instruments; the agents are driven from VS Code or the CLI.)</span></div>
+<h3 class="step"><span class="n">2</span>Get the framework onto your disk</h3>
+<p class="why"><b>Why:</b> the framework is a folder of templates and two copy-paste prompts. You never install it into your project — you point Copilot at it.</p>
+<pre><code>mkdir -p ~/frameworks
+git clone https://github.com/abhinavsehgal/copilot-ios-orchestration-framework.git ~/frameworks/copilot-ios
+echo ~/frameworks/copilot-ios     <span class="c"># remember this path — you will paste it into the prompts</span></code></pre>
+<div class="check"><span class="tick">✓</span><span><code>ls ~/frameworks/copilot-ios</code> shows <code>docs  prompts  templates</code>.</span></div>
+<h3 class="step"><span class="n">3</span>Read one file</h3>
+<p class="why"><b>Why:</b> twenty minutes now saves a confused afternoon later. Skip the rest of the docs for now.</p>
+<p>Open <code>docs/09-IOS-RUNBOOK.md</code>. That is the long version of Part 2 below.</p>
+<div class="check"><span class="tick">✓</span><span>You can say in one sentence what the orchestrator does and does not do. (It coordinates. It never edits.)</span></div>
+</section>
+<section class="part" id="ios-part-2-one-repo-2-4-hours-repeat-for-eve"><h2>Part 2 · One repo (2–4 hours — repeat for every repo)</h2>
+<p>Every repo gets its own manager and its own workers — the iOS app repo, and every API repo it calls. The workspace in Part 3 only works if each repo already has this. Start with the iOS app. The iOS roster is pre-filled (<code>ios-ui</code>, <code>ios-data</code>, <code>ios-network</code>, <code>ios-tests</code>, <code>ios-release</code>, <code>ios-privacy</code>, <code>ios-perf</code>, <code>ios-bg</code>) — drop the ones your app doesn't need.</p>
+<h3 class="step"><span class="n">1</span>Open the repo in VS Code on a fresh branch</h3>
+<p class="why"><b>Why:</b> the setup creates new files. A clean branch means you can throw it all away if you don't like it.</p>
+<pre><code>cd ~/code/&lt;your-repo&gt;
+git checkout main &amp;&amp; git pull
+git checkout -b setup/copilot-orchestration
+code .</code></pre>
+<div class="check"><span class="tick">✓</span><span><code>git status</code> is clean and the bottom-left of VS Code says <code>setup/copilot-orchestration</code>.</span></div>
+<h3 class="step"><span class="n">2</span>Run the INVENTORY prompt (look, don't touch)</h3>
+<p class="why"><b>Why:</b> Copilot scans the repo and <i>proposes</i> which specialists this repo needs. It writes nothing. You correct the proposal before anything is created.</p>
+<p>Open Copilot Chat → set the mode dropdown to <b>Agent</b>. Open <code>~/frameworks/copilot-ios/prompts/INVENTORY-PROMPT.md</code>, copy all of it, paste it into the chat. Replace <code>&lt;framework path&gt;</code> with the path from Part 1 step 2. Send.</p>
+<p>It comes back with: the iOS specialists it thinks your app needs (usually 4–6 of the 8), proposed instruction files with their globs (<code>Sources/<b>/Views/</b>/<i>.swift</code> → <code>swiftui.instructions.md</code>, <code></i>.entitlements</code> + <code>Info.plist</code> → <code>info-plist.instructions.md</code>, …), and a list of <b>Open Questions</b>. Answer the questions. Cross out specialists that feel wrong. Fewer is better.</p>
+<div class="watch"><span class=bang>!</span><span><b>The orchestrator must be named <code>&lt;repo-name&gt;-orchestrator</code></b> (for example <code>orders-orchestrator</code>). Not just <code>orchestrator</code>. In Part 3 every repo's manager sits on the same desk, and names must not collide.</span></div>
+<div class="check"><span class="tick">✓</span><span>You have a short list of specialist names you agree with, and <code>git status</code> is still clean.</span></div>
+<h3 class="step"><span class="n">3</span>Run the BOOTSTRAP prompt (now it builds)</h3>
+<p class="why"><b>Why:</b> this creates all the files. It first <b>backs up</b> anything already in <code>.github/</code> and asks before overwriting — so an existing <code>copilot-instructions.md</code> your team wrote is safe.</p>
+<p>In the <b>same chat</b>, paste <code>~/frameworks/copilot-ios/prompts/BOOTSTRAP-PROMPT.md</code> (path replaced again). It shows you each file before saving. Say yes to each one you agree with.</p>
+<p>What it creates:</p>
+<div class="tablewrap"><table><thead><tr><th>File</th><th>What it is</th></tr></thead><tbody><tr><td><code>.github/copilot-instructions.md</code></td><td>The router. Short. Read by every Copilot request.</td></tr><tr><td><code>.github/agents/&lt;repo&gt;-orchestrator.agent.md</code></td><td>The manager.</td></tr><tr><td><code>.github/agents/ios-ui.agent.md</code>, <code>ios-data.agent.md</code>, …</td><td>The workers (the iOS roster you kept).</td></tr><tr><td><code>.github/instructions/swiftui.instructions.md</code>, <code>concurrency…</code>, <code>coredata…</code>, <code>networking…</code>, <code>info-plist…</code>, <code>code-signing…</code></td><td>The sticky notes, each with an <code>applyTo:</code> glob.</td></tr><tr><td><code>.github/skills/&lt;repo&gt;-engineering/SKILL.md</code></td><td>The six-gate working method every task follows.</td></tr><tr><td><code>docs/ai-context/PROJECT.md</code></td><td>"What is true right now" — what's live where, verified commands.</td></tr><tr><td><code>docs/ai-context/LEARNINGS.md</code></td><td>Decisions, failed approaches, corrections.</td></tr><tr><td><code>docs/ai-context/HANDOFF_SCHEMA.md</code>, <code>INDEX.md</code>, <code>GLOSSARY.md</code></td><td>The note format, the map, the one-name-per-thing list.</td></tr><tr><td><code>docs/&lt;AREA&gt;_BACKLOG.md</code></td><td>Where "we'll do it later" must be written down.</td></tr></tbody></table></div>
+<div class="check"><span class="tick">✓</span><span><code>ls .github/agents</code> lists your orchestrator and specialists. The app still builds: <code>xcodebuild -workspace &lt;App&gt;.xcworkspace -scheme &lt;App&gt; -destination 'generic/platform=iOS Simulator' build</code>.</span></div>
+<h3 class="step"><span class="n">4</span>Check the manager shows up</h3>
+<p class="why"><b>Why:</b> an agent file with a typo in its name silently doesn't load.</p>
+<p>In VS Code: <b>Developer: Reload Window</b> (Ctrl/Cmd+Shift+P). Open Copilot Chat. Click the agent dropdown (next to the mode dropdown).</p>
+<div class="check"><span class="tick">✓</span><span>You see <code>&lt;repo&gt;-orchestrator</code> and every specialist in the dropdown.</span></div>
+<div class="watch"><span class=bang>!</span><span>Not there? The file must end in <code>.agent.md</code>, the <code>name:</code> line must match, and the YAML between the <code>---</code> lines must be valid. Fix, reload, look again.</span></div>
+<h3 class="step"><span class="n">5</span>Give it one real, small job</h3>
+<p class="why"><b>Why:</b> the only proof the setup works is watching a handoff go out and a return come back.</p>
+<p>Select <code>&lt;repo&gt;-orchestrator</code> in the dropdown. Type a real bug or tiny feature from your tracker — one that needs maybe 30 minutes of human work (a missing accessibility label, a <code>@StateObject</code> that should be <code>@ObservedObject</code>). Send.</p>
+<p>Watch for three things: it restates the task; it writes a <code>handoff:</code> block (YAML) with <code>claims</code>, <code>failure_condition</code>, <code>in_scope</code>; the specialist answers with a <code>return:</code> block that lists <code>files_changed</code> and <code>tests_run</code>.</p>
+<div class="check"><span class="tick">✓</span><span>You saw both blocks. The change is small and correct. If the specialist <i>refused</i> a vague handoff — that's the framework working, not failing.</span></div>
+<h3 class="step"><span class="n">6</span>Commit, open a PR, merge</h3>
+<p class="why"><b>Why:</b> teammates get the agents the moment they pull. The backup folder stays local.</p>
+<pre><code>git add .github/ docs/ .gitignore
+git commit -m "chore: bootstrap Copilot orchestration framework"
+git push -u origin setup/copilot-orchestration
+gh pr create --base main --title "Bootstrap Copilot orchestration"</code></pre>
+<div class="check"><span class="tick">✓</span><span>PR merged. A teammate pulls, reloads VS Code, and sees the same agents in their dropdown.</span></div>
+<h3 class="step"><span class="n">7</span>Later, not now: turn on hooks</h3>
+<p class="why"><b>Why:</b> hooks are tripwires (block a stop while <code>xcodebuild</code> is red; force a correction to become an instruction file; refuse to end a turn after a production push with stale docs). Add them only after you've seen people skip the written rules. <code>docs/10-MECHANICAL-ENFORCEMENT.md</code> is the recipe; the build-gate template is already filled with <code>xcodebuild</code> and a 20-minute internal cap.</p>
+<pre><code><span class="c"># when you're ready:</span>
+cp ~/frameworks/copilot-ios/templates/hooks/hooks.json.template .github/hooks/framework.json
+mkdir -p .github/scripts &amp;&amp; cp ~/frameworks/copilot-ios/templates/hooks/*.mjs.template .github/scripts/
+<span class="c"># rename *.mjs.template → *.mjs, fill the &lt;PLACEHOLDERS&gt;, restart VS Code</span></code></pre>
+<div class="watch"><span class=bang>!</span><span>Hooks are read when a session starts. After installing: reload VS Code / start a new <code>copilot</code> session, then test. Hook timeouts <b>fail open</b> — a slow <code>xcodebuild</code> silently allows, which is why the gate keeps its own cap <i>below</i> the hook timeout and treats a killed build as inconclusive.</span></div>
+<p><b>Now do Part 2 again for the next repo.</b> Two repos done with working orchestrators is the minimum before Part 3.</p>
+</section>
+<section class="part" id="ios-part-3-the-workspace-one-afternoon-once-"><h2>Part 3 · The workspace (one afternoon, once per team)</h2>
+<p>Only when tasks keep saying "change the orders API <i>and</i> the app". The usual iOS shape is one app repo that <i>consumes</i> several API repos (and maybe a shared Swift package, which is a contract too — pin it by version tag, never by branch). The workspace is a small extra repo that holds one coordinating manager, a map of who owns what, and the rules for changing contracts. It holds <b>no workers</b> — they stay in their repos. Long version: <code>docs/13-MULTI-REPO-WORKSPACES.md</code>.</p>
+<h3 class="step"><span class="n">1</span>Create an empty repo and clone it</h3>
+<p class="why"><b>Why:</b> the workspace is its own repo so the map and the rules are versioned and shared. It has no CI and deploys nothing.</p>
+<pre><code>gh repo create &lt;team&gt;-workspace --private --clone
+cd &lt;team&gt;-workspace</code></pre>
+<div class="check"><span class="tick">✓</span><span>You're inside an empty folder with a <code>.git</code>.</span></div>
+<h3 class="step"><span class="n">2</span>Copy the workspace templates into place</h3>
+<p class="why"><b>Why:</b> fourteen files, each with a fixed home. <code>templates/workspace/README.md</code> has the same table.</p>
+<pre><code>T=~/frameworks/copilot-ios/templates/workspace
+mkdir -p .github/agents .github/instructions .github/skills/delegate scripts docs/ai-context
+cp $T/copilot-instructions.md.template              .github/copilot-instructions.md
+cp $T/workspace.code-workspace.template             &lt;team&gt;.code-workspace
+cp $T/workspace.json.template                       workspace.json
+cp $T/gitignore.template                            .gitignore
+cp $T/orchestrator-agent.md.template                .github/agents/&lt;team&gt;-orchestrator.agent.md
+cp $T/contract-guardian-agent.md.template           .github/agents/contract-guardian.agent.md
+cp $T/service-mapper-agent.md.template              .github/agents/service-mapper.agent.md
+cp $T/cross-repo-contracts.instructions.md.template .github/instructions/cross-repo-contracts.instructions.md
+cp $T/delegate-skill/SKILL.md.template              .github/skills/delegate/SKILL.md
+cp $T/sync-repos.sh.template scripts/sync-repos.sh
+cp $T/delegate.sh.template   scripts/delegate.sh
+cp $T/SERVICE_MAP.md.template docs/ai-context/SERVICE_MAP.md
+cp $T/CONTRACTS.md.template   docs/ai-context/CONTRACTS.md
+cp ~/frameworks/copilot-ios/templates/HANDOFF_SCHEMA.md.template docs/ai-context/HANDOFF_SCHEMA.md
+chmod +x scripts/*.sh</code></pre>
+<div class="check"><span class="tick">✓</span><span><code>find . -type f -not -path './.git/*'</code> matches the layout in chapter 13.</span></div>
+<h3 class="step"><span class="n">3</span>Fill in the blanks — mostly in one file</h3>
+<p class="why"><b>Why:</b> <code>workspace.json</code> is the source of truth: which repos, where they live, what each one's manager is called, and every contract between them. The scripts read it; you never hard-code a path anywhere else.</p>
+<p>Open <code>workspace.json</code>. For each repo fill <code>name</code>, <code>path</code> (e.g. <code>ios-app</code>, <code>services/orders-api</code>), <code>url</code>, <code>default_branch</code>, <code>orchestrator</code> (exactly the name from Part 2 — <code>ios-app-orchestrator</code>, <code>orders-api-orchestrator</code>), <code>build</code> (<code>xcodebuild … build</code> for the app), <code>test</code>. For each contract fill <code>producer</code>, <code>consumers</code>, <code>spec</code> (where the API/event spec file lives), and a one-line <code>versioning</code> rule.</p>
+<p>Then search every copied file for <code>&lt;</code> and replace the remaining placeholders (<code>&lt;WORKSPACE_SLUG&gt;</code>, <code>&lt;REPO_1_NAME&gt;</code>…). The <code>.code-workspace</code> folder list must match the <code>path</code>s in <code>workspace.json</code>.</p>
+<div class="check"><span class="tick">✓</span><span><code>grep -rn "&lt;[A-Z_0-9]*&gt;" . --exclude-dir=.git</code> prints nothing. <code>jq . workspace.json</code> prints valid JSON.</span></div>
+<h3 class="step"><span class="n">4</span>Pull every repo onto the desk</h3>
+<p class="why"><b>Why:</b> the children are plain clones in gitignored folders — disposable. The script clones what's missing and fetches what exists. It <b>never</b> switches or resets a branch; each repo's team owns that.</p>
+<pre><code>scripts/sync-repos.sh</code></pre>
+<div class="check"><span class="tick">✓</span><span>One <code>==</code> line per repo, no <code>⚠</code> warnings. A warning means that repo has no <code>&lt;repo&gt;-orchestrator</code> yet — go back to Part 2 for it.</span></div>
+<h3 class="step"><span class="n">5</span>Open the desk in VS Code</h3>
+<p class="why"><b>Why:</b> VS Code reads each folder's <code>.github/</code> separately, so every repo's agents, sticky notes and skills are all available at once. The workspace file also switches on nested subagents.</p>
+<p><b>File → Open Workspace from File…</b> → pick <code>&lt;team&gt;.code-workspace</code>. Reload the window once it opens.</p>
+<div class="check"><span class="tick">✓</span><span>The Explorer shows the workspace folder plus every child. The agent dropdown shows <code>&lt;team&gt;-orchestrator</code>, <code>contract-guardian</code>, <code>service-mapper</code> <i>and</i> each repo's own orchestrator.</span></div>
+<div class="watch"><span class=bang>!</span><span>Every repo ships a worker called <code>backend-api</code>. On the desk those names collide. Rule: from the workspace, <b>only ever pick an orchestrator by name</b>. Never a worker. The workspace manager already knows this.</span></div>
+<h3 class="step"><span class="n">6</span>Commit the workspace</h3>
+<pre><code>git add -A
+git commit -m "chore: bootstrap cross-repo workspace"
+git push -u origin main</code></pre>
+<div class="check"><span class="tick">✓</span><span><code>git status</code> shows no child repo files — the clones are ignored, the map and rules are committed.</span></div>
+<h3 class="step"><span class="n">7</span>The first cross-repo job — add something</h3>
+<p class="why"><b>Why:</b> the workspace's whole job is ordering changes across a contract: the API that <i>produces</i> a field changes first, is deployed, and only then does the app that <i>reads</i> it change — an installed build can be older <i>or newer</i> than the server, so the app must probe or degrade, never assume.</p>
+<p>Select <code>&lt;team&gt;-orchestrator</code>. Ask for something additive that crosses one contract, for example:</p>
+<pre><code>Add an `estimatedDelivery` field to the orders API response and show it on the iOS order detail screen.</code></pre>
+<p>Watch for: it reads <code>CONTRACTS.md</code>; it says "producer first: orders-api, then ios-app"; it writes one handoff per repo, each with <code>repo:</code> and <code>contract_impact: additive</code>; it hands the API job to <code>orders-api-orchestrator</code> (in chat) or runs <code>scripts/delegate.sh orders-api …</code> (from a terminal — that runs the API repo's own Copilot session so its own rules and hooks apply); the app handoff says the new field is optional and the screen degrades when it is absent.</p>
+<div class="check"><span class="tick">✓</span><span>Two handoffs, in that order. Each return lists <code>consumers_grepped</code>. <code>git status</code> in the workspace root is clean — the workspace itself changed nothing.</span></div>
+<h3 class="step"><span class="n">8</span>Break it on purpose — rename something</h3>
+<p class="why"><b>Why:</b> a rename is a breaking change. The correct answer is a refusal.</p>
+<pre><code>Rename `total` to `grandTotal` in the orders API response.</code></pre>
+<div class="check"><span class="tick">✓</span><span>It refuses to run it as one change and proposes three: add <code>grandTotal</code> → move every consumer (the app, and any other client) → remove <code>total</code> after every consumer has shipped. If it just did the rename, the contract rule is not loading — check <code>.github/instructions/cross-repo-contracts.instructions.md</code> has <code>applyTo: "**"</code>.</span></div>
+</section>
+<section class="part" id="ios-part-4-every-day-the-whole-thing-in-one-"><h2>Part 4 · Every day (the whole thing in one table)</h2>
+<div class="tablewrap"><table><thead><tr><th>You want to…</th><th>Where</th><th>Do this</th></tr></thead><tbody><tr><td>Fix a typo, ask a question</td><td>That repo, VS Code</td><td>Plain chat, no agent selected. The framework stays out of your way.</td></tr><tr><td>Do a medium/complex job inside one repo</td><td>That repo, VS Code</td><td>Pick <code>&lt;repo&gt;-orchestrator</code> in the dropdown. Describe the job. Read the handoff and the return.</td></tr><tr><td>Same, from a terminal</td><td>That repo, CLI</td><td><code>cd</code> into the repo, run <code>copilot</code>, use <code>--agent=&lt;repo&gt;-orchestrator</code> or pick it inside. Same agents, same rules.</td></tr><tr><td>Ship what you did</td><td>Any</td><td><code>/commit-push-pr</code> — it refuses to push to <code>main</code>, builds first, never stages secrets.</td></tr><tr><td>Change something in the API <i>and</i> the app</td><td>The workspace (<code>.code-workspace</code>)</td><td>Pick <code>&lt;team&gt;-orchestrator</code>. It orders the work producer → consumer and delegates one repo at a time.</td></tr><tr><td>Ask "is this API change safe?"</td><td>The workspace</td><td>Pick <code>contract-guardian</code>. It greps every consumer and answers with file:line, never an opinion.</td></tr><tr><td>Correct the agent ("no, use X")</td><td>Any</td><td>Then type <code>/correction-capture</code>. It turns the correction into a sticky note so it never happens again. Never accept "I'll remember".</td></tr><tr><td>Say "we'll do that later"</td><td>Any</td><td>It must be written into <code>docs/&lt;AREA&gt;_BACKLOG.md</code> before the chat ends. Spoken follow-ups vanish.</td></tr><tr><td>Submit to App Review / promote a TestFlight build</td><td>The app repo</td><td>Same session: update <code>CHANGELOG.md</code>, the affected <code>docs/ai-context/</code> map, and <code>PROJECT.md</code> "what is live where" (App Store / TestFlight / internal). A fresh agent sees only what's in git.</td></tr><tr><td>Hand a well-defined task to the cloud agent</td><td>GitHub issue</td><td>One issue per repo, assigned to that repo's orchestrator agent. It cannot touch two repos in one run.</td></tr></tbody></table></div>
+</section>
+<section class="part" id="ios-part-5-when-it-goes-wrong"><h2>Part 5 · When it goes wrong</h2>
+<div class="tablewrap"><table><thead><tr><th>You see</th><th>It usually means</th><th>Fix</th></tr></thead><tbody><tr><td>The agent isn't in the dropdown</td><td>File name or frontmatter</td><td>Must end in <code>.agent.md</code>; <code>name:</code> must match; valid YAML between the <code>---</code> lines. Reload Window.</td></tr><tr><td>A sticky note never shows up</td><td>Its <code>applyTo:</code> glob doesn't match</td><td>Run <code>find . -path "&lt;the glob&gt;"</code> — if nothing prints, the glob is wrong. Globs are relative to that repo's root.</td></tr><tr><td>The wrong repo's worker answered</td><td>Name collision on the desk</td><td>From the workspace, invoke orchestrators only. The workspace router says so in rule 4.</td></tr><tr><td><code>delegate.sh</code> exits with "handoff does not carry repo:"</td><td>The handoff file is missing its <code>repo:</code> line</td><td>Add <code>repo: &lt;name&gt;</code> exactly as in <code>workspace.json</code>. A note for one repo must never run in another.</td></tr><tr><td><code>delegate.sh</code>: command not found / no such repo</td><td><code>copilot</code> not on PATH, or a bad <code>path</code> in the manifest</td><td><code>copilot --version</code>; then <code>jq '.repos[].path' workspace.json</code> and check each folder exists.</td></tr><tr><td>A hook never fires</td><td>Installed mid-session, or in the wrong place</td><td>Restart the session. Team hooks live in <code>.github/hooks/*.json</code> (committed); <code>~/.copilot/hooks</code> is only you. Timeouts fail open — the <code>xcodebuild</code> gate's own cap must sit below <code>timeoutSec</code>.</td></tr><tr><td>The build-gate blocks on a "failed" build that was just slow</td><td>Derived-data contention or a low cap</td><td>A build killed by the cap must <i>allow</i> (the template does). Raise <code>BUILD_CAP_MS</code>; don't run two <code>xcodebuild</code>s in one derived-data folder.</td></tr><tr><td>The specialist refused the task</td><td>The handoff was vague</td><td>That's correct behaviour. Add the missing field it named (usually <code>failure_condition</code> or evidence on a claim) and re-send.</td></tr><tr><td>The manager is editing code itself</td><td>Specialists too narrow, or the wrong agent selected</td><td>Check the dropdown. If it really is the orchestrator, widen a specialist's scope rather than letting the manager code.</td></tr><tr><td>Something worked last month and now doesn't</td><td>The platform moved</td><td>Re-run <code>prompts/REFINEMENT-PROMPT.md</code>; its "platform drift" section re-checks the Copilot docs. Three framework claims went stale in three months once already (Pitfall 23).</td></tr></tbody></table></div>
+</section>
+<section class="part" id="ios-the-checklist-print-this"><h2>The checklist (print this)</h2>
+<div class="eyebrow">Per person, once</div>
+<ul class="print"><li><code>xcodebuild</code>, <code>code</code>, <code>copilot</code>, <code>git</code>, <code>jq</code> all print a version</li><li>Framework cloned to <code>~/frameworks/copilot-ios</code></li></ul>
+<div class="eyebrow">Per repo</div>
+<ul class="print"><li>Branch <code>setup/copilot-orchestration</code></li><li>INVENTORY prompt → specialist list agreed</li><li>BOOTSTRAP prompt → files created; orchestrator named <code>&lt;repo&gt;-orchestrator</code>; the app still builds with <code>xcodebuild</code></li><li>Reload Window → agents visible in the dropdown</li><li>One real small job → saw <code>handoff:</code> and <code>return:</code></li><li>PR merged; a teammate sees the agents too</li><li>(later) hooks installed, session restarted, tested</li></ul>
+<div class="eyebrow">Per team, once — after ≥ 2 repos are done</div>
+<ul class="print"><li>Workspace repo created; 14 template files in place; no <code>&lt;PLACEHOLDER&gt;</code> left</li><li><code>workspace.json</code>: every repo + every contract filled</li><li><code>scripts/sync-repos.sh</code> → no warnings</li><li>Opened the <code>.code-workspace</code>; workspace orchestrator + each repo's orchestrator visible</li><li>Additive cross-repo job → producer first, two handoffs, consumers grepped</li><li>Rename job → refused and split into add / move / remove</li></ul>
+</section>
+<section class="part" id="ios-cross-links"><h2>Cross-links</h2>
+<ul class="list"><li><code>docs/09-IOS-RUNBOOK.md</code> — the long version of Part 2.</li><li><code>docs/10-MECHANICAL-ENFORCEMENT.md</code> — hooks (Part 2 step 7).</li><li><code>docs/13-MULTI-REPO-WORKSPACES.md</code> — the long version of Part 3 (one iOS app + N API repos; shared Swift packages as contracts).</li><li><code>docs/12-PROJECT-TRUTH-AND-LEARNINGS.md</code> — why the backlog, <code>PROJECT.md</code> and "submit = freshen docs" rules exist.</li><li><code>docs/08-IOS-COMMON-PITFALLS.md</code> — Part 5 in full, plus the nine iOS platform pitfalls (32–40).</li></ul>
+</section>
+</div>
+    <footer>Generated from the three frameworks' <code>docs/00-QUICKSTART.md</code> files on 2026-08-22 (Claude Code and GitHub Copilot docs verified the same day). The Markdown in each repo is the source of truth.</footer>
+  </main>
+</div>
+<script>
+(function(){
+  var tabs=document.querySelectorAll('.tabs button');
+  function show(k){
+    tabs.forEach(function(b){b.setAttribute('aria-selected', b.dataset.ed===k?'true':'false');});
+    document.querySelectorAll('.edition').forEach(function(e){e.dataset.active = e.id==='ed-'+k ? 'true':'false';});
+    document.querySelectorAll('[data-rail]').forEach(function(o){o.style.display = o.dataset.rail===k ? 'block':'none';});
+    try{history.replaceState(null,'','#'+k);}catch(e){}
+  }
+  tabs.forEach(function(b){b.addEventListener('click',function(){show(b.dataset.ed); window.scrollTo({top:0});});});
+  var h=(location.hash||'').slice(1); if(['copilot','claude','ios'].indexOf(h)>=0) show(h);
+  document.addEventListener('click',function(ev){var a=ev.target.closest('a[href^="#"]'); if(!a) return; var id=a.getAttribute('href').slice(1); var ed=id.split('-')[0]; if(['copilot','claude','ios'].indexOf(ed)>=0) show(ed);});
+})();
+</script>
+</body>
+</html>

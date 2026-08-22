@@ -44,6 +44,7 @@ copilot-ios-orchestration-framework/
 │
 ├── docs/                                  ← framework documentation (13 chapters)
 │   ├── 00-QUICKSTART.md                   ← START HERE: step-by-step onboarding for any iOS project, incl. app + API repos
+│   ├── 00-QUICKSTART.html                ← the same guide as one offline page with tabs for all three editions (open in a browser)
 │   ├── 01-PRINCIPLES.md                   ← seven core principles
 │   ├── 02-ARCHITECTURE.md                 ← .github/ (agents / instructions / skills / hooks) + iOS-flavored docs/ai-context/ layout
 │   ├── 03-IOS-SPECIALISTS-GUIDE.md        ← the iOS specialist roster + scope tables; .agent.md + agents: allowlist
