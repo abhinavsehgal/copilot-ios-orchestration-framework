@@ -8,6 +8,8 @@
 
 This is **a sibling to**, not a replacement for, the stack-agnostic [`github-copilot-orchestration-framework`](https://github.com/abhinavsehgal/github-copilot-orchestration-framework). If your project is web, backend, or polyglot, use that one. If you ship to the App Store, this one is built for you.
 
+> **Read the onboarding guide online:** https://abhinavsehgal.github.io/copilot-ios-orchestration-framework/ — all three editions, one page.
+
 ---
 
 ## Why an iOS-only framework
@@ -45,6 +47,7 @@ copilot-ios-orchestration-framework/
 ├── docs/                                  ← framework documentation (13 chapters)
 │   ├── 00-QUICKSTART.md                   ← START HERE: step-by-step onboarding for any iOS project, incl. app + API repos
 │   ├── 00-QUICKSTART.html                ← the same guide as one offline page with tabs for all three editions (open in a browser)
+│   │                                    live: https://abhinavsehgal.github.io/copilot-ios-orchestration-framework/
 │   ├── 01-PRINCIPLES.md                   ← seven core principles
 │   ├── 02-ARCHITECTURE.md                 ← .github/ (agents / instructions / skills / hooks) + iOS-flavored docs/ai-context/ layout
 │   ├── 03-IOS-SPECIALISTS-GUIDE.md        ← the iOS specialist roster + scope tables; .agent.md + agents: allowlist
