@@ -43,6 +43,7 @@ copilot-ios-orchestration-framework/
 ├── LICENSE
 │
 ├── docs/                                  ← framework documentation (13 chapters)
+│   ├── 00-QUICKSTART.md                   ← START HERE: step-by-step onboarding for any iOS project, incl. app + API repos
 │   ├── 01-PRINCIPLES.md                   ← seven core principles
 │   ├── 02-ARCHITECTURE.md                 ← .github/ (agents / instructions / skills / hooks) + iOS-flavored docs/ai-context/ layout
 │   ├── 03-IOS-SPECIALISTS-GUIDE.md        ← the iOS specialist roster + scope tables; .agent.md + agents: allowlist
@@ -163,7 +164,7 @@ Skip INVENTORY-PROMPT (no existing config to scan). Paste BOOTSTRAP-PROMPT direc
 
 ### Scenario C — Just want to read the framework
 
-Read in this order: README → [01-PRINCIPLES](docs/01-PRINCIPLES.md) → [03-IOS-SPECIALISTS-GUIDE](docs/03-IOS-SPECIALISTS-GUIDE.md) → [09-IOS-RUNBOOK](docs/09-IOS-RUNBOOK.md). ~45 minutes.
+Read in this order: README → [00-QUICKSTART](docs/00-QUICKSTART.md) → [01-PRINCIPLES](docs/01-PRINCIPLES.md) → [03-IOS-SPECIALISTS-GUIDE](docs/03-IOS-SPECIALISTS-GUIDE.md) → [09-IOS-RUNBOOK](docs/09-IOS-RUNBOOK.md). ~45 minutes.
 
 ---
 
