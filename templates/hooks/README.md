@@ -24,3 +24,5 @@ If your team also runs the Claude Code edition in the same repo, keep BOTH hook 
 both `.github/hooks/*.json` and `.claude/settings.json`, but the cloud agent reads only the former
 and Claude Code only the latter. The two contracts differ (stdout JSON vs stderr text) — never share
 a script between them without an adapter.
+
+`stop-gate.mjs` also takes `<PROTECTED_BRANCH>` and a `RELEASE_HEADING_RE` (the shape of your changelog's release heading, default `## [prod] <date>`): a same-day release heading counts as "docs freshened" even when the entry shipped inside the promote merge (Rule 13).

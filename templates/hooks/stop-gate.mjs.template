@@ -1,6 +1,8 @@
 // stop-gate.mjs — the ONE agentStop hook. Ordered checks: correction-capture →
 // build-gate → doc-freshness. First block wins. Loop-guarded. Output: JSON on stdout.
 import { spawnSync } from "node:child_process";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { readPayload, field, hasFlag, clearFlag, readState, writeState, out } from "./hook-io.mjs";
 
 // ---- Customise ---------------------------------------------------------------
@@ -15,8 +17,23 @@ const BUILD_CAP_MS = 20 * 60 * 1000;   // 20 min — xcodebuild on a busy CI box
                                        // timeoutSec in hooks.json (1500 s): timeouts fail OPEN, so if the hook
                                        // timer is the lower one the gate silently allows exactly when the build is slow.
 const CHANGELOG_PATH = "<CHANGELOG_PATH>";
-const STATE_DOC_PATH = "<STATE_DOC_PATH>";              // e.g. "docs/ai-context/PROJECT.md"
+const STATE_DOC_PATH = "<STATE_DOC_PATH>";
+const PROTECTED_BRANCH = "<PROTECTED_BRANCH>";      // e.g. "main" — used to read the pushed changelog
+// Rule 13 — a release entry written BEFORE the push ships inside the promote merge; accept a
+// same-day release heading in the changelog. Regex receives today's date as YYYY-MM-DD.
+const RELEASE_HEADING_RE = (today) => new RegExp(`^## \\[prod\\][^\\n]*\\b${today}\\b`, "m"); // <CUSTOMISE to your changelog's release-heading shape>              // e.g. "docs/ai-context/PROJECT.md"
 // ------------------------------------------------------------------------------
+
+function changelogHasTodaysEntry() {
+  try {
+    const d = new Date();
+    const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    const re = RELEASE_HEADING_RE(today);
+    const pushed = spawnSync("git", ["show", `origin/${PROTECTED_BRANCH}:${CHANGELOG_PATH}`], { encoding: "utf8", timeout: 5000 });
+    if (pushed.status === 0 && re.test(pushed.stdout)) return true;
+    return re.test(readFileSync(resolve(process.cwd(), CHANGELOG_PATH), "utf8"));
+  } catch { return false; }
+}
 
 function allow() { out({ decision: "allow" }); process.exit(0); }
 function block(reason) { out({ decision: "block", reason }); process.exit(0); }
@@ -50,7 +67,7 @@ try {
 
   // Pattern 5 — doc freshness
   const s = readState();
-  if (s.lastProdPush && !(s.lastChangelogEdit > s.lastProdPush)) {
+  if (s.lastProdPush && !(s.lastChangelogEdit > s.lastProdPush) && !changelogHasTodaysEntry()) {
     writeState({ lastProdPush: 0 });                      // one block per push; loop guard covers the retry
     block(`DOC-FRESHNESS GATE — a production push happened this session but ${CHANGELOG_PATH} was not updated afterwards. Before finishing, update the FULL doc set for what shipped: (1) ${CHANGELOG_PATH} — the release entry; (2) the affected docs/ai-context/*.md orientation map(s); (3) any affected .github/instructions/*.instructions.md; (4) ${STATE_DOC_PATH} §3 (what is live where) if production STATE changed. A future agent sees only what is in git. If no production push actually occurred, say so and finish.`);
   }

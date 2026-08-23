@@ -204,6 +204,11 @@ releases are cut from agent sessions.
     when its effective directory is inside the session's `cwd`; an unknowable directory (`cd $VAR`)
     never counts. Releasing sibling repos from scratchpad clones fired the Claude edition's gate twice
     before this guard existed.
+13. **Content beats ordering.** Teams that write the changelog entry FIRST (changelog → integration
+    branch → promote) ship it inside the promote merge, so no changelog edit follows the push. The
+    doc-freshness gate also accepts a same-day release heading in the changelog (read from
+    `origin/<PROTECTED_BRANCH>` or the working tree); customise `RELEASE_HEADING_RE` to your heading
+    shape, and make sure another environment's heading or a stale date cannot match.
 
 ---
 
