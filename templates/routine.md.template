@@ -1,0 +1,63 @@
+# Routine — <ROUTINE_NAME>
+
+> One file per routine, checked in (suggested home: `docs/routines/<ROUTINE_NAME>.md`).
+> This file IS the routine: its prompt is generated from the charter below, it is diffed and
+> reviewed like code, and every tuning pass appends to the log at the bottom.
+> See `docs/14-STANDING-ROUTINES.md` for the seven conventions this template encodes.
+
+## Charter (one job)
+
+<ONE_SENTENCE — e.g. "Find statically unreachable code under <SRC_DIR> and remove it.">
+<IF_THE_SENTENCE_NEEDS_"AND",_SPLIT_INTO_TWO_ROUTINES>
+
+## Scope
+
+- Paths: `<GLOB_1>`, `<GLOB_2>`
+- Out of scope: <PATHS_OR_KINDS_OF_CHANGE_THIS_ROUTINE_MUST_NEVER_TOUCH — e.g. "anything under
+  <MIGRATIONS_DIR>; any file matching a REVIEW-ONLY rule; dependency manifests">
+
+## Schedule
+
+- Cadence: <daily | weekly | CRON_EXPRESSION>
+- Runner: <scheduled workflow → cloud agent (issue assigned to Copilot) | scheduled workflow → `copilot -p --agent=<ROUTINE_AGENT>` on a macOS runner (required for anything that runs the Simulator; pin the Xcode version)> (kill switch: <HOW_TO_STOP_IT>)
+
+## Output contract
+
+- Pull requests only — never a direct push. Branch: `routine/<ROUTINE_NAME>/<DATE>-<SLUG>`.
+- Max <N_FILES> files / <N_LINES> lines per PR; larger findings are split or reported, not shipped.
+- Every fix-PR body contains: **what** / **why** / **repro** (for bugs) / **truth table**
+  (before/after behavior at the affected call sites, verified on the real system — no mocks).
+- A finding the routine cannot fix within contract → an issue/report entry, never a sprawling PR.
+
+## Reporting
+
+- Channel: <SLACK_CHANNEL | ISSUE_THREAD | docs/routines/LOG.md>
+- Every run posts: ran-at, what it examined, PRs opened (links), findings skipped, budget used.
+- A run that produces nothing still posts ("examined N files, nothing to do") — silence must mean
+  broken, not idle.
+
+## Gates
+
+- Automated review on every PR: Copilot code review (add <STRONG_REVIEW_PASS> when the diff
+  touches <HIGH_BLAST_RADIUS_PATHS — payments, auth, entitlements/privacy surfaces, cross-repo contracts>).
+- Merge: human only. The routine never merges, approves, or dismisses reviews.
+
+## Budget and caps
+
+- Per-run budget: <MAX_MINUTES | MAX_PREMIUM_REQUESTS | MAX_MACOS_RUNNER_MINUTES>.
+- Attempt cap: after <N> consecutive failed or empty runs → park, post to the channel, stop
+  rescheduling until a human un-parks.
+- Completion write is CHECKED: the run's final status update must be verified written; an error on
+  that write is a run FAILURE, posted as such (never silently retried into a loop).
+
+## Noise budget
+
+- Target: ≤ 1 noisy PR in <N> (start at 1-in-20 for a new routine; tighten toward 1-in-50).
+- Over budget after two tuning passes → retire the routine and record why in `LEARNINGS.md`.
+
+## Tuning log
+
+> Append-only. Every wrong PR gets an entry — patching the charter is the fix, closing the PR is
+> just cleanup. (Same shape as a LEARNINGS correction entry.)
+
+- <DATE> — <WHAT_THE_ROUTINE_GOT_WRONG> → <CHARTER/PROMPT_CHANGE_MADE> (<PR_OR_RUN_LINK>)

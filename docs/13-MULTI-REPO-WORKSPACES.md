@@ -221,6 +221,26 @@ change to every consumer's next build, and the producer-first / additive-only / 
 consumers ordering below has nothing to order against. A breaking change to the package is a tag
 bump plus one consumer handoff per app, in contract order, like any other contract.
 
+## Scheduled workspace routines — the contract guardian gets a clock
+
+Agent-era defects concentrate at the seams between repos — and the iOS app is a consumer of every
+contract, so drift lands here first. Seams are exactly where standing routines (Chapter 14) pay
+off:
+
+- **contract-drift-daily** — re-derive each contract's consumer list from the child clones and diff
+  reality against `CONTRACTS.md` + `SERVICE_MAP.md`; include shared Swift packages in the diff (a
+  package pinned by branch instead of tag is drift in waiting). Open a workspace PR (or per-repo
+  issues) on divergence — the `contract-guardian` charter on a schedule, same REVIEW-ONLY posture.
+- **service-map-freshener** — re-verify `SERVICE_MAP.md` rows against the clones; a stale row gets
+  a dated PR, not silent tolerance (Chapter 12's freshness contract, applied cross-repo).
+- **workspace janitor** — prune stale clones and re-sync from the manifest (`sync-repos.sh`), so
+  delegation never runs against a repo state nobody chose.
+
+Routine writes follow the same delegation rule as everything else in this chapter: a routine that
+must *change* a child repo delegates to that child's own orchestrator session; the workspace-level
+routine itself stays read-only plus reports. Conventions, budgets and the catalog:
+`docs/14-STANDING-ROUTINES.md`.
+
 ## What NOT to do
 
 - **Don't put the specialists in the workspace repo.** They belong with the code they edit, or at
@@ -268,3 +288,4 @@ bump plus one consumer handoff per app, in contract order, like any other contra
 - Official (verified 2026-08-22): *Custom agents configuration*, *VS Code → Custom agents*,
   *VS Code → Subagents*, *Agent customization overview* (per-folder discovery), *About Copilot
   coding agent* (single-repo), *Copilot CLI programmatic reference*, *Hooks reference*.
+- `docs/14-STANDING-ROUTINES.md` — the routine conventions the scheduled layer above relies on.

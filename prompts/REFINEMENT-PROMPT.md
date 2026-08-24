@@ -110,9 +110,28 @@ Also check: no `.chatmode.md` files remain (retired → `.agent.md`); agent file
 - The engineering skill (`.github/skills/<project-slug>-engineering/SKILL.md`): is it still loading (appears under `/` in chat; used by the cloud agent)? Are reports still tagging claims with the confidence classes?
 - If the app is a consumer of API repos in a workspace (Chapter 13): is `CONTRACTS.md` still true, and is every shared Swift package pinned by tag, not branch, in `Package.swift`?
 
+### A11. Context weight (v1.2.0)
+
+Measure what the install injects per session. By construction: which instruction files' `applyTo:`
+globs match the files a typical session touches, times their size; which skills auto-load; how big
+the router is. Cross-check the org's usage reports for runaway consumers (a scheduled loop, an
+over-invoked skill). Flag: any instruction file that has not changed an outcome since the last pass
+(candidate for trimming or merging), any skill that dominates, any hook that injects a whole file
+where a section would do. If misbehavior was reported this quarter (rabbit-holing, fixation),
+confirm the move-context-aside bisection was run (Pitfall 41) before anyone blames the model.
+
+### A12. Routine health (v1.2.0 — only if standing routines are installed)
+
+For each routine charter (Chapter 14): noise rate vs its budget (merged vs closed PRs since the
+last pass); tuning log growing whenever PRs get closed (a closed routine PR with no tuning entry
+means the loop is broken); attempt caps and the checked completion write still in place; budget vs
+actual macOS-runner/premium-request spend; any routine whose reporting went silent — silence must
+mean broken, not idle, so verify which it was. Propose retiring any routine still over its noise
+budget after two tuning passes.
+
 ## Phase B — Propose changes (NO writes yet)
 
-Output the audit as a single proposal block — one row per proposed change, rows grouped by the audit section (A1–A10) that produced them, and a section that produced no change listed explicitly as "A<n>: nothing to change":
+Output the audit as a single proposal block — one row per proposed change, rows grouped by the audit section (A1–A12) that produced them, and a section that produced no change listed explicitly as "A<n>: nothing to change":
 
 ### Proposed changes
 

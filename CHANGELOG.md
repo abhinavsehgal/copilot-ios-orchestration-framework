@@ -2,6 +2,41 @@
 
 All notable changes to the Copilot iOS Orchestration Framework. Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.2.0] — 2026-08-24
+
+### Added — the third leg: scheduled autonomy
+
+- **`docs/14-STANDING-ROUTINES.md`** — standing routines: narrow agent jobs on a schedule, producing
+  small PRs behind review gates. The seven conventions (one charter per routine; PRs only; repro +
+  truth table on every fix, verified in the Simulator on the real app; one reporting surface; never
+  self-merge; wrong output tunes the routine, not just the output; attempt caps + a verified retire
+  path), the iOS starter catalog (**Simulator crash fuzzer** as the flagship — `xcrun simctl` +
+  XCUITest-driven, repro sequence + symbolicated trace in every fix-PR; **privacy-drift-weekly** —
+  the REVIEW-ONLY `ios-privacy` agent on a clock, opening issues, never PRs; dead-asset sweeper;
+  flaky-UI-test root-causer; hill-climber), and the run mechanisms (scheduled workflow → cloud
+  agent; scheduled workflow → headless CLI on a **macOS runner** with a pinned Xcode for anything
+  that drives the Simulator; hook firing in headless CI marked not re-verified — the PR gate is the
+  enforcement layer until an install stamps a verified-on date). Distilled from the Claude Code
+  team's public maintenance-fleet practice (Aug 2026: 388 PRs opened, 180 merged, ~1-in-50 noise),
+  restated agnostically; iOS-platform facts stay iOS.
+- **`templates/routine.md.template`** — the checked-in routine charter: scope, schedule + kill
+  switch, output contract, reporting, gates, budgets/caps (incl. macOS runner minutes) with a
+  CHECKED completion write, noise budget, append-only tuning log.
+- **`templates/skills/hill-climb/SKILL.md.template`** — the metric-loop skill (cold-launch time,
+  app size, build wall-clock, test-suite duration): baseline → one hypothesis per iteration →
+  measure → keep/revert → append-only ratchet file; stop on target / plateau / budget.
+- **Chapter 13 § Scheduled workspace routines** — contract-drift-daily (shared Swift packages in
+  the diff), service-map-freshener, workspace janitor; workspace routines stay read-only + reports.
+- **Chapter 6 § Scheduled runs** — standing routines as the cloud agent / headless CLI on a clock.
+- **Pitfall 41** — a context system is a program: bisect misbehavior by moving the context files
+  aside on a scratch branch; weigh the install by matched `applyTo:` globs × file size + usage
+  reports.
+- **Pitfall 42** — an unattended job without a verified retire path runs forever (the 17-day
+  silent-grinder failure class: completion write's error never read, "ran" reported as "worked").
+- **REFINEMENT checks A11–A12** — context weight pass; routine health pass.
+
+---
+
 ## [1.1.1] — 2026-08-22
 
 ### Fixed — same-day audit of v1.1.0 (one runtime defect, two name mismatches, stale idioms)

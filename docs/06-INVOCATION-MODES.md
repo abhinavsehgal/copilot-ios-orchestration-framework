@@ -124,6 +124,17 @@ Inline Chat does not see other files in the project. If you're refactoring a Swi
 | "Every night, run the test plan and write a triage file" | `copilot -p … --agent=ios-tests` from the repo directory, in CI |
 | "Add a field to the orders API and show it in the app" (two repos) | the workspace orchestrator → `copilot -p` into each repo (Chapter 13) |
 
+## Scheduled runs — standing routines (v1.2)
+
+The cloud agent and the headless CLI put on a clock, with governance. A routine is a narrow charter
+file executed on a schedule — a GitHub Actions `schedule:` workflow that assigns the routine's
+issue to the cloud agent, or runs `copilot -p --agent=<routine-agent>` headless (on a macOS runner
+when the routine must drive the Simulator) — producing small PRs behind review gates, never direct
+writes. It is the only way this framework runs with nobody watching, which is why it carries the
+strictest output contract: repro + truth table on every fix-PR, one reporting surface, budgets and
+attempt caps, and a human on every merge. Full conventions, the iOS starter catalog (Simulator
+crash fuzzer, privacy-drift-weekly, dead-asset sweeper) and budgets: `docs/14-STANDING-ROUTINES.md`.
+
 ## Surface support matrix (current)
 
 | Feature | VS Code | JetBrains | Visual Studio | github.com Chat | Cloud Agent | Code review | CLI (`copilot`) |
