@@ -1,10 +1,10 @@
 # 08 — iOS Common Pitfalls
 
-Forty hard-won lessons — framework / configuration pitfalls, iOS-specific pitfalls, and the
+Forty-two hard-won lessons — framework / configuration pitfalls, iOS-specific pitfalls, and the
 platform-drift and production lessons that v1.1.0 added. Read this before bootstrapping.
 
 > Pitfalls 1–22 date from v1.0.0. Pitfalls 23–31 (framework) and 32–40 (iOS-specific) were added in
-> v1.1.0; Pitfalls 5 and 19 were rewritten in v1.1.0 because the platform facts they rested on changed
+> v1.1.0 (Pitfalls 41–42 in v1.2.0, alongside Chapter 14); Pitfalls 5 and 19 were rewritten in v1.1.0 because the platform facts they rested on changed
 > (verified against the official Copilot and VS Code docs on 2026-08-22), and Pitfall 23 records
 > which v1.0 claims the platform has since made false.
 
@@ -459,6 +459,40 @@ non-ASCII and encoded literals, so a zero match proves nothing).
 
 **Right answer:** stamp the git SHA into the build (`Info.plist` or an about screen) and read it
 from the device before believing what a build contains. Rule for the release / CI configuration.
+
+## Framework pitfalls (41–42) — added in v1.2.0
+
+### Pitfall 41: A context system is a program — profile it and bisect it
+
+The router, instruction files, skills and hooks you build with this framework are injected into
+sessions as context, and that cost compounds invisibly: a mature install can front-load thousands
+of lines into every session and nobody notices until the premium-request bill or the drift does.
+Worse, misbehavior gets misattributed — when the agent rabbit-holes or fixates, teams blame the
+model while a stale instruction file or an over-broad skill is doing the steering.
+
+**Right answer:** treat context like code, with two operational habits. **Bisect:** reproduce the
+misbehavior on a scratch branch with `.github/copilot-instructions.md`, `.github/instructions/` and
+the skills temporarily moved aside; if it disappears, the fault is in your context files — find it
+by restoring halves. **Weigh:** once a quarter, measure what the install injects — which
+instruction files' `applyTo:` globs matched a typical session, times their size, plus the skills
+that auto-loaded — and read the org's usage reports for runaway consumers. Make every instruction
+file earn its context (REFINEMENT check A11). A rule that has never changed an outcome is not free;
+it is paid for on every session.
+
+### Pitfall 42: An unattended job without a verified retire path runs forever
+
+A scheduled pipeline ran for 17 days without a single job completing. The completion write violated
+a database CHECK constraint, its error return was never read, the job stayed "running", and a
+reaper re-queued it — so the system burned its full capacity re-doing satisfied work, while every
+dashboard showed green because runs *were happening*. Nothing a person watched distinguished "ran"
+from "worked".
+
+**Right answer:** for any unattended loop (a scheduled workflow, a nightly Simulator fuzzer, a
+standing routine — Chapter 14): the completion write's error is READ, and a failed completion is a
+loud failure, not a silent retry; attempt caps park a grinding job instead of letting it burn macOS
+runner minutes; and the reporting surface states what was *verified done*, never just that the
+workflow exited green. "The routine ran" is a claim about the scheduler; only the checked
+completion write is a claim about the work.
 
 ## Cross-links
 

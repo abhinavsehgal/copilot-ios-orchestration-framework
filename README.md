@@ -1,6 +1,8 @@
 # Copilot iOS Orchestration Framework
 
-> **Version 1.1.1** ([changelog](CHANGELOG.md)) · MIT license · iOS-only by design
+> **Version 1.2.0** ([changelog](CHANGELOG.md)) · MIT license · iOS-only by design
+>
+> **v1.2.0 (2026-08-24) — the third leg: scheduled autonomy.** New chapter **14 — Standing Routines**, with an iOS-first catalog: the **Simulator crash fuzzer** (drive the real app via `xcrun simctl` + XCUITest on a macOS runner, fix PRs carry the repro sequence + symbolicated trace) and **privacy-drift-weekly** (the REVIEW-ONLY `ios-privacy` agent on a clock — issues, never PRs). One charter per routine, noise budgets, attempt caps + a verified retire path; `templates/routine.md.template` + a hill-climb skill (cold-launch time, app size, build wall-clock). Two new pitfalls (41–42) plus REFINEMENT checks A11–A12.
 >
 > **v1.1.0 (2026-08-22) — three months of production use on the stack-agnostic parent, folded into the iOS edition, and three platform claims retracted.** New chapters: **12 — Project truth, learnings and the evidence ladder** (`PROJECT.md` with a date-stamped "what is live on the App Store / TestFlight" table) and **13 — Multi-repo workspaces** (one iOS app repo + N API repos, with the `.code-workspace` + manifest + delegation pattern and version-pinned shared Swift packages). Eighteen new pitfalls — nine framework lessons and nine iOS-specific ones (APNs environment, `apns-topic`, the one-shot notification prompt, `WKWebView` route changes, Guideline 4.8, the `NSURLSession` cookie jar, orientation locks, replayed notification taps, build flavours). **Retracted, because the platform moved:** Copilot *does* have lifecycle hooks now (`.github/hooks/*.json` — chapter 10 is rewritten around them, with an `xcodebuild` build-gate sized for a busy CI box); custom agents *can* invoke custom agents (VS Code `agents:` is an allowlist); and **agent skills** (`.github/skills/`) — not prompt files — are the cross-surface equivalent of Claude Code skills. Every platform claim in v1.1.0 carries a verified-on date.
 >
@@ -44,7 +46,7 @@ copilot-ios-orchestration-framework/
 ├── CHANGELOG.md
 ├── LICENSE
 │
-├── docs/                                  ← framework documentation (13 chapters)
+├── docs/                                  ← framework documentation (14 chapters)
 │   ├── 00-QUICKSTART.md                   ← START HERE: step-by-step onboarding for any iOS project, incl. app + API repos
 │   ├── 00-QUICKSTART.html                ← the same guide as one offline page with tabs for all three editions (open in a browser)
 │   │                                    live: https://abhinavsehgal.github.io/copilot-ios-orchestration-framework/
@@ -60,7 +62,8 @@ copilot-ios-orchestration-framework/
 │   ├── 10-MECHANICAL-ENFORCEMENT.md       ← (rewritten v1.1) Copilot hooks: the contract, five patterns, the xcodebuild build-gate, twelve design rules
 │   ├── 11-IOS-MCP-CATALOG.md              ← curated iOS MCP servers + when to install each
 │   ├── 12-PROJECT-TRUTH-AND-LEARNINGS.md  ← (v1.1) PROJECT.md / LEARNINGS.md / backlogs, the evidence ladder, the six-gate playbook
-│   └── 13-MULTI-REPO-WORKSPACES.md        ← (v1.1) one iOS app + N API repos: layers, three delegation mechanisms, contracts, shared Swift packages
+│   ├── 13-MULTI-REPO-WORKSPACES.md        ← (v1.1) one iOS app + N API repos: layers, three delegation mechanisms, contracts, shared Swift packages
+│   └── 14-STANDING-ROUTINES.md            ← (v1.2) scheduled autonomy: Simulator crash fuzzer, privacy drift, budgets, review gates
 │
 ├── prompts/                               ← ready-to-paste Chat prompts
 │   ├── INVENTORY-PROMPT.md                ← read-only iOS-anchored project scan (run first)
@@ -76,6 +79,8 @@ copilot-ios-orchestration-framework/
     │
     ├── PROJECT.md.template · LEARNINGS.md.template · BACKLOG.md.template · GLOSSARY.md.template   ← (v1.1) the project-truth set
     ├── engineering-playbook-skill.md.template     ← (v1.1) six gates + evidence ladder, as .github/skills/<slug>-engineering/SKILL.md
+    ├── routine.md.template                        ← (v1.2) standing-routine charter (Chapter 14)
+    ├── skills/hill-climb/SKILL.md.template        ← (v1.2) metric loop: iterate on X until it hits Y
     │
     ├── agents/                                    ← each becomes .github/agents/<name>.agent.md
     │   ├── orchestrator-agent.md.template         ← carries agents: [...] (VS Code subagent allowlist)

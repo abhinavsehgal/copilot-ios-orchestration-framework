@@ -1,0 +1,85 @@
+---
+name: hill-climb
+description: Iteratively improve ONE measurable metric toward a stated target — "iterate on X with a measurement and a dataset until it hits Y". Use for performance, cost, latency, build/CI time, bundle size, yield rates. Not for feature work.
+---
+
+# Skill — Hill-Climb Loop
+
+> Install as `.github/skills/hill-climb/SKILL.md` (cross-surface: cloud agent, CLI, IDEs).
+
+## When to invoke
+
+- The task has the shape **"iterate on X with a profiler/measurement and a dataset until it hits Y"**:
+  cold-launch time, app size, build wall-clock, test-suite duration, memory at a percentile, frame
+  rate, cost per unit of work.
+- A number exists (or can be built in one session) that a command can print deterministically.
+
+## When NOT to invoke
+
+- No measurable Y ("make it feel faster") — first build the measurement, then hill-climb.
+- The metric is a proxy you have not verified reflects the real goal (Pitfall 25 — verify the
+  reader sees the whole set before trusting its number).
+- Feature work wearing a metric costume.
+
+## Inputs (all required before iteration 1)
+
+- **Metric X** — one number, one direction. `<METRIC_DEFINITION>`
+- **Measure command** — `<COMMAND_THAT_PRINTS_X>`, deterministic enough that two consecutive runs
+  agree within `<TOLERANCE>`; if it doesn't, fix the harness first (median of N runs, pinned
+  dataset, warm/cold stated).
+- **Dataset** — the fixed workload the measurement runs against. Pin it (a commit, a fixture set, a
+  recorded trace). A moving dataset makes every comparison a lie.
+- **Target Y** — the stop-when-reached number, set by a human.
+- **Budget** — max iterations / wall-clock / tokens for this climb.
+
+## Workflow
+
+### 1. Baseline
+
+Run the measure command. Record iteration 0 in the ratchet file (below). No baseline, no climb.
+
+### 2. One hypothesis, one change
+
+Name the suspected bottleneck ("what would prove me wrong: the profile shows <X> is not where the
+time goes"). Make the smallest change that tests it. One variable per iteration — batched changes
+make the measurement unattributable.
+
+### 3. Measure again
+
+Same command, same dataset. Improved → keep, commit, append to the ratchet. Regressed or flat →
+revert *fully*, append the negative result anyway (a failed hypothesis is evidence the next
+iteration needs).
+
+### 4. Repeat until a stop condition
+
+- **Target hit** — report, with the ratchet file as the proof trail.
+- **`<N_FLAT>` consecutive non-improving iterations** — report a plateau + the best remaining
+  hypotheses; a human decides whether to re-budget.
+- **Budget exhausted** — report where the climb stood.
+
+## The ratchet file
+
+`docs/hill-climbs/<METRIC_SLUG>.md`, append-only:
+
+```
+| iter | date | change (one line) | X before | X after | kept? |
+|------|------|-------------------|----------|---------|-------|
+| 0    | <D>  | baseline          | —        | <X0>    | —     |
+| 1    | <D>  | <CHANGE>          | <X0>     | <X1>    | yes   |
+```
+
+The ratchet is the claim: any "we improved X" statement cites it. It also stops the next session
+from re-trying reverted hypotheses (append-only failure notes are half its value).
+
+## Evidence rules
+
+- The measure command is the only truth — never report an improvement from reasoning, a diff, or a
+  partial run.
+- Ratchet rows are written at measurement time, not reconstructed later.
+- A regression shipped while climbing a different metric is a finding, not collateral — report it.
+
+## Handing off
+
+A hill-climb pairs naturally with a standing routine (`docs/14-STANDING-ROUTINES.md`): the routine
+runs one bounded iteration per scheduled run, the ratchet file carries state between runs, and the
+routine's PR-and-review gates apply to every kept change.

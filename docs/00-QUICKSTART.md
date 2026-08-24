@@ -3,7 +3,7 @@
 > The whole framework as one step-by-step walk. Every step says **what to do**, **why**, **what to
 > paste**, and **how you know it worked**. Written for an iOS engineer who has never seen the framework;
 > the long version of each part is linked. Based on v1.1.0 and the GitHub Copilot + VS Code docs as
-> verified on 2026-08-22 — if a step here disagrees with the chapter it links to, the chapter wins.
+> verified on 2026-08-24 — if a step here disagrees with the chapter it links to, the chapter wins.
 >
 > **Time:** 15 min once per person · 2–4 h per repo · one afternoon for the workspace.
 
@@ -382,6 +382,24 @@ Rename `total` to `grandTotal` in the orders API response.
 
 ---
 
+## Part 6 · Optional: let it run while you sleep (after two weeks)
+
+Once real tasks have flowed through the framework for a couple of weeks, add your first **standing
+routine** — a narrow agent job on a schedule that opens small PRs behind review gates. The full
+pattern (seven conventions, starter catalog, budgets): `docs/14-STANDING-ROUTINES.md`.
+
+- **What:** copy `templates/routine.md.template` to `docs/routines/<name>.md`, fill the charter,
+  schedule it — a `schedule:` GitHub Actions workflow that assigns the routine's issue to the
+  cloud agent, or runs headless `copilot -p --agent=<routine-agent>`.
+- **Why:** maintenance becomes a stream instead of a project. The public reference fleet merged
+  180 routine PRs in a few weeks at ~1-in-50 noise.
+- **Start with ONE of:** doc-drift checker · dead-asset sweeper · the flagship Simulator crash
+  fuzzer (needs a macOS runner with a pinned Xcode — budget those minutes).
+- **The safety rules:** PRs only · never self-merge · per-run budget + attempt caps · a checked
+  completion write · one reporting channel.
+- **You know it worked when:** every run posts to its channel — including "nothing to do" — and
+  the first wrong PR produces a tuning-log entry in the charter, not just a closed PR.
+
 ## The checklist (print this)
 
 **Per person, once**
@@ -416,3 +434,4 @@ Rename `total` to `grandTotal` in the orders API response.
 - `docs/13-MULTI-REPO-WORKSPACES.md` — the long version of Part 3 (one iOS app + N API repos; shared Swift packages as contracts).
 - `docs/12-PROJECT-TRUTH-AND-LEARNINGS.md` — why the backlog, `PROJECT.md` and "submit = freshen docs" rules exist.
 - `docs/08-IOS-COMMON-PITFALLS.md` — Part 5 in full, plus the nine iOS platform pitfalls (32–40).
+- `docs/14-STANDING-ROUTINES.md` + `templates/routine.md.template` — Part 6, in full (scheduled autonomy).
