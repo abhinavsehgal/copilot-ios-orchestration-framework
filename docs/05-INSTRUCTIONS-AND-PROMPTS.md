@@ -21,6 +21,31 @@ applyTo: "Sources/**/Views/**/*.swift,Sources/Views/**/*.swift,*.xib,*.storyboar
 >
 > **Universal evidence rule.** Every claim about a View must cite path:line, an Apple HIG section, or a screenshot/snapshot test result. Don't claim "this view is accessible" without showing the relevant labels and traits.
 
+## Verify your globs — they fail silently, in both directions
+
+A scoped rule is two claims: the FIELD name the tool reads, and the GLOBS inside it. Both fail
+without a warning, and the two tools fail opposite ways.
+
+**The field.** Copilot reads `applyTo:`. An instruction file with no `applyTo` is **not applied automatically at all** — the opposite of Claude Code, where an unscoped rule loads every session. iOS paths rarely carry brackets, but a repo that also holds a web client will, and the field-name half of this applies to every `.instructions.md` you write.
+
+**The globs.** Glob syntax has already claimed `[` (character class) and `(` (group). A directory
+literally named `[id]` written as `[id]` matches a single character, `i` or `d`. One named
+`(admin)` written as `(admin)` matches nothing at all. Several mainstream web frameworks use
+exactly those characters as their routing convention, so a project on one will write dead globs
+naturally. Escape them:
+
+```
+applyTo: "Sources/**/*.swift,web/src/app/\\(marketing\\)/**/*.tsx"
+```
+
+**Neither failure is visible in review** — both look like ordinary paths. Copy
+`templates/verify-rule-globs.mjs.template` into your scripts directory and run it whenever a glob
+changes: it asserts every scoped file matches at least one real tracked file, and fails when two
+matchers disagree about the same pattern. On a real migration it caught 5 bracket breaks and 13
+parenthesis breaks across 7 files, one of which the author had not predicted.
+
+**A glob that matches nothing is indistinguishable from a rule you never wrote.**
+
 ## Hard rules
 
 ### 1. SwiftUI `@State` must be `private`

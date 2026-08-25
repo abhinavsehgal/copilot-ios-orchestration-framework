@@ -1,0 +1,154 @@
+#!/usr/bin/env node
+/**
+ * verify-rule-globs — proves every path-scoped instruction file still matches real files.
+ *
+ * WHY THIS EXISTS (Pitfalls 43 and 44):
+ * A scoped rule that matches nothing does not fail loudly. It simply never loads, and the first
+ * symptom is a rule "being ignored" weeks later. Two silent causes:
+ *
+ *   1. The scoping FIELD is wrong. Claude Code's is `paths:`; Copilot's is `applyTo:`. Get it
+ *      wrong and Claude loads the file in EVERY session (fails open) while Copilot loads it in
+ *      NONE (fails closed). Neither warns.
+ *   2. The GLOB is silently invalid. `[` opens a character class and `(` opens a group, so a
+ *      directory literally named `[id]` or `(admin)` — the routing convention of several
+ *      mainstream web frameworks — must be escaped as `\[id\]` / `\(admin\)` or it matches nothing.
+ *
+ * Neither is visible in review. Both are visible in one command.
+ *
+ * SETUP
+ *   1. Copy to <SCRIPTS_DIR>/verify-rule-globs.mjs
+ *   2. The three constants below are pre-filled for this edition — change them only if
+ *      your layout differs.
+ *   3. `npm i -D picomatch` (or point REFERENCE_MATCHER at whatever your tool documents).
+ *   4. Run it in CI, and in your pre-PR skill, whenever a glob changes.
+ *
+ * EXIT  0 = every rule resolves   ·   1 = at least one rule matches nothing / engines disagree
+ */
+
+import { readFileSync, readdirSync, existsSync } from "node:fs";
+import { join, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+import { execFileSync } from "node:child_process";
+import picomatch from "picomatch";
+
+/* ── FILL THESE THREE ────────────────────────────────────────────────────────────────────────── */
+const RULES_DIR_REL = ".github/instructions";      // e.g. ".claude/rules" or ".github/instructions"
+const SCOPE_FIELD = "applyTo";      // e.g. "paths" (Claude Code) or "applyTo" (Copilot)
+const LEGACY_FIELD = "";    // a pre-migration name still tolerated, or "" for none
+/* ────────────────────────────────────────────────────────────────────────────────────────────── */
+
+const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), "../..");
+const RULES_DIR = join(REPO_ROOT, RULES_DIR_REL);
+
+/**
+ * Your tool's OWN matcher, if a hook or script of yours also reads these globs. Two engines
+ * reading one pattern differently is a half-wired rule: the native loader ignores the file while
+ * your hook surfaces it, or the reverse. If you have no second matcher, delete this and the
+ * disagreement check below.
+ */
+function secondaryMatches(pattern, path) {
+  const expand = (pat) => {
+    const m = pat.match(/\{([^{}]+)\}/);
+    if (!m) return [pat];
+    return m[1].split(",").flatMap((opt) => expand(pat.replace(m[0], opt)));
+  };
+  const toRe = (glob) => {
+    let re = "";
+    for (let i = 0; i < glob.length; i++) {
+      const c = glob[i];
+      if (c === "*") {
+        if (glob[i + 1] === "*") { re += ".*"; i += 1; if (glob[i + 1] === "/") i += 1; }
+        else re += "[^/]*";
+      } else if (c === "?") {
+        re += "[^/]";
+      } else if (c === "\\" && i + 1 < glob.length) {
+        // An escaped literal — drop the backslash, take the next character literally, so this
+        // engine and the native one agree on `\[id\]`.
+        i += 1;
+        re += glob[i].replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      } else if (".+^$|()[]\\".includes(c)) {
+        re += "\\" + c;
+      } else {
+        re += c;
+      }
+    }
+    return new RegExp("^" + re + "$");
+  };
+  return expand(pattern).some((p) => toRe(p).test(path));
+}
+
+function parseScope(content) {
+  const fm = content.match(/^---\n([\s\S]*?)\n---/);
+  if (!fm) return { field: null, globs: [] };
+  const lines = fm[1].split("\n");
+  for (const field of [SCOPE_FIELD, LEGACY_FIELD].filter(Boolean)) {
+    // Block form:  field:\n  - "glob"
+    const start = lines.findIndex((l) => l.trim() === `${field}:`);
+    if (start !== -1) {
+      const globs = [];
+      for (let i = start + 1; i < lines.length; i++) {
+        const item = lines[i].match(/^\s+-\s+(.+?)\s*$/);
+        if (!item) break;
+        globs.push(item[1].replace(/^['"]|['"]$/g, ""));
+      }
+      return { field, globs };
+    }
+    // Inline form:  field: "a,b"   (Copilot's applyTo is comma-separated)
+    const inline = lines.find((l) => l.startsWith(`${field}:`));
+    if (inline) {
+      const v = inline.slice(field.length + 1).trim().replace(/^['"]|['"]$/g, "");
+      return { field, globs: v.split(",").map((s) => s.trim()).filter(Boolean) };
+    }
+  }
+  return { field: null, globs: [] };
+}
+
+if (!existsSync(RULES_DIR)) {
+  console.error(`No rules directory at ${RULES_DIR_REL} — fix RULES_DIR_REL.`);
+  process.exit(1);
+}
+
+const tracked = execFileSync("git", ["ls-files"], {
+  cwd: REPO_ROOT, encoding: "utf8", maxBuffer: 64 * 1024 * 1024,
+}).split("\n").filter(Boolean);
+
+let failures = 0, totalGlobs = 0;
+
+for (const f of readdirSync(RULES_DIR).filter((x) => x.endsWith(".md")).sort()) {
+  const { field, globs } = parseScope(readFileSync(join(RULES_DIR, f), "utf8"));
+
+  if (!field) {
+    // Not a failure by itself, but say which way it fails on YOUR tool — the two are opposite.
+    console.log(`! ${f}  no ${SCOPE_FIELD}: — unscoped (Claude Code: loads always · Copilot: never loads)`);
+    continue;
+  }
+  if (field !== SCOPE_FIELD) {
+    console.log(`✗ ${f}  uses legacy field "${field}" — migrate to "${SCOPE_FIELD}"`);
+    failures++;
+    continue;
+  }
+
+  const dead = [], disagree = [];
+  let hits = 0;
+  for (const g of globs) {
+    totalGlobs++;
+    const nativeHits = tracked.filter((p) => picomatch(g)(p));
+    const otherHits = tracked.filter((p) => secondaryMatches(g, p));
+    hits += nativeHits.length;
+    if (nativeHits.length === 0) dead.push(g);
+    if ((nativeHits.length === 0) !== (otherHits.length === 0)) disagree.push(g);
+  }
+
+  if (hits === 0 || disagree.length) failures++;
+  const status = hits === 0 ? "MATCHES NOTHING" : `ok — ${hits} file(s)`;
+  console.log(`${hits === 0 || disagree.length ? "✗" : "✓"} ${f}  ${status}`);
+  if (dead.length) console.log(`    dead glob(s): ${dead.join(", ")}`);
+  if (disagree.length) console.log(`    ENGINES DISAGREE on: ${disagree.join(", ")} — check the escaping`);
+}
+
+console.log(`\n${totalGlobs} glob(s) checked against ${tracked.length} tracked files.`);
+if (failures) {
+  console.error(`${failures} rule file(s) FAILED. A rule that matches nothing never loads.`);
+  process.exit(1);
+}
+console.log("All rules resolve to real files.");

@@ -494,6 +494,65 @@ runner minutes; and the reporting surface states what was *verified done*, never
 workflow exited green. "The routine ran" is a claim about the scheduler; only the checked
 completion write is a claim about the work.
 
+### Pitfall 43: A scoping field the tool does not recognise fails SILENTLY — and two tools fail in opposite directions
+
+Path-scoped instruction files carry a frontmatter field naming the globs they apply to. Get that
+field wrong — a typo, a name invented before the platform shipped its own, one copied from a
+different tool — and nothing errors. The file is still valid. The frontmatter still parses. What
+changes is invisible, and it is **not the same failure on every tool**:
+
+| Tool | Scoping field | Wrong or missing field | What you get |
+|---|---|---|---|
+| Claude Code | `paths:` | loads **unconditionally** | fails **OPEN** — every file's rules in every session |
+| GitHub Copilot | `applyTo:` | **not applied automatically** | fails **CLOSED** — the guidance never arrives |
+
+Same mistake. Opposite damage. On one you drown: a real project's fourteen rule files, ~101k
+tokens, entered *every* session — a docs edit carrying the payment rules — and the cost was not
+just tokens, because oversized instruction files are precisely what makes a model start ignoring
+the instructions that matter. On the other you starve: the rules simply never load, the agent
+works without them, and the output looks like a model that ignored your standards.
+
+Neither prints a warning. Both look exactly like a working setup.
+
+**Right answer:** confirm the field name against the tool's current documentation, not against
+another tool's convention or your own memory (Pitfall 18). Then confirm the *globs resolve*, which
+the next pitfall covers, because a correct field name pointed at a glob that matches nothing is the
+same silence wearing different clothes.
+
+### Pitfall 44: Glob metacharacters in directory names — the scoped rule that matches nothing
+
+A framework that puts punctuation in directory names hands you globs that are silently invalid.
+The characters that matter are the ones glob syntax has already claimed:
+
+- **`[` opens a character class.** A directory literally named `[id]` written as `[id]` matches a
+  single character — `i` or `d` — and never the folder.
+- **`(` opens a group.** A directory named `(admin)` written as `(admin)` is read as an extglob
+  group and matches nothing at all.
+
+This is not exotic. It is the default routing convention of several mainstream web frameworks
+(dynamic segments in brackets, route groups in parentheses), and any project using one will write
+these paths naturally into a rule's globs and never learn they are dead.
+
+Measured on a real repository during exactly this migration: **5 globs** broken by brackets, and
+**13 more across 7 rule files** broken by parentheses. Every one looked correct in review. The
+parenthesis case was not even predicted by the person doing the migration — it surfaced only
+because a check ran before the commit.
+
+**Right answer:** escape the metacharacter — `\[id\]`, `\(admin\)` — and **verify, do not
+review.** These patterns cannot be validated by reading them; both failures look like ordinary
+paths. Ship a checker alongside the rules (`templates/verify-rule-globs.mjs`) that asserts every
+scoped file matches at least one real tracked file, and run it whenever a glob changes. A rule that
+matches nothing never loads, and nothing anywhere will tell you.
+
+Two corollaries worth keeping:
+
+- **If a rule and a hook both read these globs, they must agree on one pattern.** A hand-written
+  matcher that treats `[` as a literal and a native matcher that treats it as a class will disagree
+  about the same file, so the checker compares both engines and fails on a disagreement.
+- **Where the tool's own documentation does not specify its glob implementation** — as VS Code's
+  does not for `applyTo` (verified 2026-08-25) — a check is not belt-and-braces, it is the only
+  source of truth available.
+
 ## Cross-links
 
 - [`01-PRINCIPLES.md`](01-PRINCIPLES.md) — the seven principles these pitfalls reinforce

@@ -1,6 +1,6 @@
 # Copilot iOS Orchestration Framework
 
-> **Version 1.2.0** ([changelog](CHANGELOG.md)) · MIT license · iOS-only by design
+> **Version 1.2.1** ([changelog](CHANGELOG.md)) · MIT license · iOS-only by design
 >
 > **v1.2.0 (2026-08-24) — the third leg: scheduled autonomy.** New chapter **14 — Standing Routines**, with an iOS-first catalog: the **Simulator crash fuzzer** (drive the real app via `xcrun simctl` + XCUITest on a macOS runner, fix PRs carry the repro sequence + symbolicated trace) and **privacy-drift-weekly** (the REVIEW-ONLY `ios-privacy` agent on a clock — issues, never PRs). One charter per routine, noise budgets, attempt caps + a verified retire path; `templates/routine.md.template` + a hill-climb skill (cold-launch time, app size, build wall-clock). Two new pitfalls (41–42) plus REFINEMENT checks A11–A12.
 >
