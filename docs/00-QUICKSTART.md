@@ -427,7 +427,7 @@ pattern (seven conventions, starter catalog, budgets): `docs/14-STANDING-ROUTINE
 
 ## Cross-links
 
-- https://abhinavsehgal.github.io/copilot-ios-orchestration-framework/ (GitHub Pages) or `docs/00-QUICKSTART.html` offline — this guide plus the other two editions as one page with tabs (open in a browser; generated from the three `00-QUICKSTART.md` files on 2026-08-22).
+- https://abhinavsehgal.github.io/copilot-ios-orchestration-framework/ (GitHub Pages) or `docs/00-QUICKSTART.html` offline — this guide plus the other two editions as one page with tabs (open in a browser; generated from the three `00-QUICKSTART.md` files — the page footer carries its build date).
 
 - `docs/09-IOS-RUNBOOK.md` — the long version of Part 2.
 - `docs/10-MECHANICAL-ENFORCEMENT.md` — hooks (Part 2 step 7).
