@@ -2,6 +2,36 @@
 
 All notable changes to the Copilot iOS Orchestration Framework. Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.2.1] — 2026-08-25
+
+### Fixed — the scoping traps that fail without a warning
+
+Both come from a real migration off a custom scoping field, where the rename itself was the easy
+part and the two silent failures underneath it were not.
+
+- **Pitfall 43 — a scoping field the tool does not recognise fails silently, and the two tools
+  fail in OPPOSITE directions.** Claude Code loads an unscoped rule **unconditionally** (fails
+  open: ~101k tokens of rules entered every session on the reference project, a docs edit carrying
+  the payment rules); Copilot does **not apply** an instruction file with no `applyTo` at all
+  (fails closed: the guidance never arrives). Same mistake, opposite damage, neither warns.
+- **Pitfall 44 — glob metacharacters in directory names.** `[` opens a character class and `(`
+  opens a group, so a folder literally named `[id]` or `(admin)` — the routing convention of
+  several mainstream web frameworks — must be escaped or the glob matches nothing. Measured on the
+  reference migration: **5 globs** dead from brackets, **13 more across 7 files** from
+  parentheses; the parenthesis case was not predicted and surfaced only because a check ran.
+
+### Added
+
+- **`templates/verify-rule-globs.mjs.template`** — asserts every path-scoped file matches at least
+  one real tracked file, and fails when two matchers disagree about the same pattern. Pre-filled
+  for this edition. This matters most where the tool's own docs do not specify their glob
+  implementation (VS Code's do not, for `applyTo` — verified 2026-08-25): when the documentation
+  cannot tell you, a check is the only source of truth.
+- Chapter 5 gains **"Verify your globs — they fail silently, in both directions"**, with the
+  field-vs-glob split and escaped examples.
+
+---
+
 ## [1.2.0] — 2026-08-24
 
 ### Added — the third leg: scheduled autonomy
